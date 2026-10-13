@@ -1,0 +1,45 @@
+<%- include('../partials/head') %>
+<div class="login-wrapper">
+  <div class="osa-signin">
+    <div class="osa-signin-logo">
+      <img src="/img/logo.webp" alt="OSA — Operations Service Assistance">
+    </div>
+    <h1 class="osa-signin-title">Sign in</h1>
+    <p class="osa-signin-sub">Operations Service Assistance<br>Behind every smooth operation.</p>
+
+    <form method="POST" action="/login" class="w-100">
+      <div class="osa-signin-field">
+        <i class="bi bi-person osa-signin-field-icon"></i>
+        <input type="text" name="username" placeholder="Username" autocomplete="username" required autofocus>
+      </div>
+      <div class="osa-signin-field">
+        <i class="bi bi-lock osa-signin-field-icon"></i>
+        <input type="password" name="password" id="signinPassword" placeholder="Password" autocomplete="current-password" required>
+        <button type="button" class="osa-signin-eye" id="signinEye" aria-label="Show password" title="Show password"><i class="bi bi-eye"></i></button>
+      </div>
+      <% if (locals.notice) { %>
+        <div class="osa-signin-notice"><i class="bi bi-clock-history"></i> <%= locals.notice %></div>
+      <% } %>
+      <% if (error) { %>
+        <div class="osa-signin-error"><i class="bi bi-exclamation-circle"></i> <%= error %></div>
+      <% } %>
+      <button type="submit" class="osa-signin-btn">Sign In</button>
+    </form>
+
+    <div class="osa-signin-divider"><span>Need help?</span></div>
+    <p class="osa-signin-help">Forgot your password or cannot sign in? Ask IT to reset it for you.</p>
+  </div>
+</div>
+<script>
+  (function () {
+    var eye = document.getElementById('signinEye'), pw = document.getElementById('signinPassword');
+    if (!eye || !pw) return;
+    eye.addEventListener('click', function () {
+      var show = pw.type === 'password';
+      pw.type = show ? 'text' : 'password';
+      eye.innerHTML = '<i class="bi ' + (show ? 'bi-eye-slash' : 'bi-eye') + '"></i>';
+      eye.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    });
+  })();
+</script>
+<%- include('../partials/foot') %>

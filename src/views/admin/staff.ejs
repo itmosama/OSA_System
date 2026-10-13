@@ -1,0 +1,156 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container-fluid">
+  <div class="admin-shell">
+    <%- include('_sidebar') %>
+    <main class="admin-main">
+      <h4 class="mb-3"><i class="bi bi-person-badge"></i> Staff</h4>
+
+      <div class="mx-auto" style="max-width: 980px;">
+        <div class="card p-4 mb-3">
+          <h6 class="text-muted">Add Staff Member</h6>
+          <p class="small text-muted mb-2">These are the people tickets can be assigned to. Each one belongs to a department, so Reports can show what every person handled.</p>
+          <% if (error) { %><div class="alert alert-danger py-2"><%= error %></div><% } %>
+          <form method="POST" action="/admin/staff" class="osa-staff-add-row" enctype="multipart/form-data">
+            <div class="osa-sa-photo">
+              <label class="osa-avatar-pick" title="Add a photo (you can crop it)">
+                <span class="osa-avatar osa-avatar-initials osa-avatar-pick-ph" id="newStaffPhotoPh" style="width:46px;height:46px;"><i class="bi bi-camera"></i></span>
+                <img id="newStaffPhotoImg" class="osa-avatar" alt="" style="width:46px;height:46px;display:none;">
+                <input type="file" name="photo" accept="image/*" class="d-none" id="newStaffPhoto" data-crop-photo>
+              </label>
+            </div>
+            <div class="osa-sa-name">
+              <input type="text" name="full_name" class="form-control" placeholder="Staff name" required>
+            </div>
+            <div class="osa-sa-dept">
+              <select name="department_id" class="form-select" required>
+                <option value="" disabled selected>Department</option>
+                <% departments.forEach(d => { %><option value="<%= d.id %>"><%= d.name %></option><% }) %>
+              </select>
+            </div>
+            <div class="osa-sa-mobile">
+              <input type="tel" name="mobile" class="form-control" value="+974 " placeholder="Mobile / WhatsApp" inputmode="tel" autocomplete="off" data-default-country="+974">
+            </div>
+            <div class="osa-sa-login">
+              <select name="user_id" class="form-select" title="Optional: link to a login so 'Assigned to me' works">
+                <option value="">No login (optional)</option>
+                <% users.forEach(u => { %><option value="<%= u.id %>"><%= u.full_name %> (<%= u.username %>)</option><% }) %>
+              </select>
+            </div>
+            <div class="osa-sa-add">
+              <button class="btn btn-primary" type="submit"><i class="bi bi-plus"></i> Add</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table mb-0 align-middle">
+              <thead class="table-light"><tr><th style="width:84px">Photo</th><th>Name</th><th>Department</th><th>Mobile (WhatsApp)</th><th>Login</th><th>Active</th><th>Tickets</th><th></th></tr></thead>
+              <tbody>
+                <% if (staff.length === 0) { %>
+                  <tr><td colspan="8" class="text-center text-muted py-4">No staff added yet.</td></tr>
+                <% } %>
+                <% staff.forEach(s => { %>
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center gap-1">
+                        <label class="osa-avatar-edit" title="Click to <%= s.photo ? 'change' : 'add' %> the photo">
+                          <%- include('../partials/staff-avatar', { name: s.full_name, photo: s.photo, size: 40 }) %>
+                          <span class="osa-avatar-edit-badge"><i class="bi bi-camera-fill"></i></span>
+                          <input form="staffForm<%= s.id %>" type="file" name="photo" accept="image/*" class="d-none" data-crop-photo data-autosubmit>
+                        </label>
+                        <% if (s.photo) { %>
+                          <button form="staffForm<%= s.id %>" type="submit" name="remove_photo" value="1" class="btn btn-sm btn-link text-danger p-0" title="Remove photo"><i class="bi bi-x-circle"></i></button>
+                        <% } %>
+                      </div>
+                    </td>
+                    <td><input form="staffForm<%= s.id %>" type="text" name="full_name" class="form-control form-control-sm" value="<%= s.full_name %>" required></td>
+                    <td>
+                      <select form="staffForm<%= s.id %>" name="department_id" class="form-select form-select-sm" required>
+                        <% departments.forEach(d => { %><option value="<%= d.id %>" <%= s.department_id === d.id ? 'selected' : '' %>><%= d.name %></option><% }) %>
+                      </select>
+                    </td>
+                    <td><input form="staffForm<%= s.id %>" type="tel" name="mobile" class="form-control form-control-sm" value="<%= s.mobile || '' %>" placeholder="+974 ..." inputmode="tel" style="min-width:150px" data-default-country="+974"></td>
+                    <td>
+                      <select form="staffForm<%= s.id %>" name="user_id" class="form-select form-select-sm">
+                        <option value="">None</option>
+                        <% users.forEach(u => { %><option value="<%= u.id %>" <%= s.user_id === u.id ? 'selected' : '' %>><%= u.full_name %></option><% }) %>
+                      </select>
+                    </td>
+                    <td><input form="staffForm<%= s.id %>" type="checkbox" name="active" value="1" class="form-check-input" <%= s.active ? 'checked' : '' %>></td>
+                    <td><a href="/tickets?staff_id=<%= s.id %>&view=done" class="text-decoration-none" title="Open this person's tickets"><%= s.done_count %> done / <%= s.ticket_count %></a></td>
+                    <td class="text-end text-nowrap">
+                      <form method="POST" action="/admin/staff/<%= s.id %>/edit" id="staffForm<%= s.id %>" enctype="multipart/form-data"></form>
+                      <button form="staffForm<%= s.id %>" class="btn btn-sm btn-outline-primary" type="submit" title="Save"><i class="bi bi-check-lg"></i></button>
+                      <form method="POST" action="/admin/staff/<%= s.id %>/delete" class="d-inline">
+                        <button class="btn btn-sm btn-outline-danger js-delete-btn" type="button" data-label="staff member &quot;<%= s.full_name %>&quot;"><i class="bi bi-trash"></i></button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p class="small text-muted mt-2">Untick <strong>Active</strong> when someone leaves: they disappear from the assign list but their past tickets stay in the reports. Deleting a person removes them from past tickets too.</p>
+
+        <div class="card p-4 mt-3">
+          <h6 class="text-muted">Add Many at Once (import a file)</h6>
+          <ol class="small mb-3 ps-3">
+            <li><a href="/admin/staff/template.csv" class="fw-semibold"><i class="bi bi-download"></i> Download the template</a> and open it in Excel.</li>
+            <li>Fill in one person per row: <strong>name</strong>, <strong>department</strong> (spelled like in Admin &rarr; Departments) and, if they have one, their <strong>login username</strong>. Delete the two example rows.</li>
+            <li>Save it as <strong>CSV</strong>, then choose the file below and click Import.</li>
+          </ol>
+          <% if (importResult && importResult.fatal) { %><div class="alert alert-danger py-2"><%= importResult.fatal %></div><% } %>
+          <% if (importResult && !importResult.fatal) { %>
+            <% if (importResult.problems.length) { %>
+              <div class="alert alert-danger py-2 small">
+                <strong>Nothing was added.</strong> Please fix these <%= importResult.problems.length %> problem<%= importResult.problems.length === 1 ? '' : 's' %> in <em><%= importResult.file %></em> and upload it again:
+                <ul class="mb-0 mt-1">
+                  <% importResult.problems.slice(0, 30).forEach(p => { %><li>Row <%= p.line %>: <%= p.message %></li><% }) %>
+                  <% if (importResult.problems.length > 30) { %><li>…and <%= importResult.problems.length - 30 %> more.</li><% } %>
+                </ul>
+              </div>
+            <% } else { %>
+              <div class="alert alert-success py-2 small mb-2">
+                <i class="bi bi-check-circle"></i> <strong><%= importResult.added %> staff member<%= importResult.added === 1 ? '' : 's' %> added</strong> from <em><%= importResult.file %></em>.
+                <% if (importResult.skipped.length) { %> <%= importResult.skipped.length %> row<%= importResult.skipped.length === 1 ? '' : 's' %> skipped (examples or people already in the list).<% } %>
+              </div>
+            <% } %>
+          <% } %>
+          <form method="POST" action="/admin/staff/import" enctype="multipart/form-data" class="row g-2">
+            <div class="col-md-9"><input type="file" name="staff_file" class="form-control" accept=".csv,text/csv" required></div>
+            <div class="col-md-3 d-grid"><button class="btn btn-success" type="submit"><i class="bi bi-upload"></i> Import</button></div>
+          </form>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/admin-sidebar.js"></script>
+<script src="/js/photo-cropper.js"></script>
+<script>
+  // Shows the chosen (cropped) picture in the round button left of the name.
+  (function () {
+    var input = document.getElementById('newStaffPhoto'), img = document.getElementById('newStaffPhotoImg'), ph = document.getElementById('newStaffPhotoPh');
+    if (!input) return;
+    function show() {
+      var f = input.files && input.files[0];
+      if (!f) { img.style.display = 'none'; ph.style.display = ''; return; }
+      img.src = URL.createObjectURL(f); img.style.display = ''; ph.style.display = 'none';
+    }
+    input.addEventListener('osa-photo-cropped', show);
+    input.addEventListener('change', function () { if (!input.hasAttribute('data-cropped')) setTimeout(show, 0); });
+  })();
+</script>
+<script>
+  // Qatar's code is filled in for you; an empty number box shows it again when you click in.
+  document.querySelectorAll('input[data-default-country]').forEach(function (box) {
+    var code = box.getAttribute('data-default-country') + ' ';
+    box.addEventListener('focus', function () { if (!box.value.trim()) { box.value = code; box.setSelectionRange(code.length, code.length); } });
+    box.addEventListener('blur', function () { if (box.value.trim() === code.trim()) box.value = ''; });
+  });
+</script>
+<%- include('../partials/foot') %>

@@ -1,0 +1,40 @@
+<%- include('partials/head') %>
+<%- include('partials/nav') %>
+<div class="container">
+  <div class="text-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-house-door"></i> Home</h4>
+    <div class="small"><strong>Welcome, <%= currentUser.full_name %></strong> <span class="text-muted">· Choose where you'd like to go.</span></div>
+  </div>
+
+  <%
+    const canSeeAccessRequests = currentUser.role === 'admin' || perms.can_submit_access_requests || perms.can_approve_as_hod
+      || perms.can_approve_as_hr || perms.can_approve_as_it_manager || perms.can_approve_as_gm || perms.can_fulfil_access_requests;
+
+    const modules = [
+      { href: '/tickets', icon: 'bi-ticket-perforated', color: '#0d6efd', title: 'Tickets', description: 'Raise and track IT support tickets.', show: true },
+      { href: '/lost-found', icon: 'bi-binoculars', color: '#198754', title: 'Lost & Found', description: 'Log and manage guest lost & found items.', show: true },
+      { href: '/maintenance', icon: 'bi-tools', color: '#6f42c1', title: 'Preventive Maintenance', description: 'Scheduled equipment & facility maintenance.', show: true },
+      { href: '/workflow-requests', icon: 'bi-signpost-split', color: '#0dcaf0', title: 'Workflow Requests', description: 'HR → Head of Dept → Finance → IT approvals.', show: canSeeWorkflow },
+      { href: '/access-requests', icon: 'bi-person-badge', color: '#fd7e14', title: 'IT Access Request', description: 'New joiner IT access request & approvals.', show: canSeeAccessRequests },
+      { href: '/admin', icon: 'bi-gear', color: '#343a40', title: 'Admin', description: 'Manage users, departments, settings & reports.', show: canSeeAdmin },
+      { href: '/admin/reports', icon: 'bi-bar-chart-line', color: '#dc3545', title: 'Reports', description: 'Ticket analytics, staff performance & SLA.', show: !canSeeAdmin && (currentUser.role === 'admin' || perms.can_view_reports) },
+    ].filter(m => m.show);
+  %>
+
+  <div class="row g-3 justify-content-center osa-home-grid">
+    <% modules.forEach(m => { %>
+      <div class="col-6 col-md-4">
+        <a href="<%= m.href %>" class="text-decoration-none osa-home-tile">
+          <div class="card h-100 p-3 text-center">
+            <div class="osa-home-tile-icon mx-auto mb-2" style="--tile-color:<%= m.color %>;">
+              <i class="bi <%= m.icon %>"></i>
+            </div>
+            <div class="fw-bold text-dark mb-1"><%= m.title %></div>
+            <div class="text-muted small"><%= m.description %></div>
+          </div>
+        </a>
+      </div>
+    <% }) %>
+  </div>
+</div>
+<%- include('partials/foot') %>

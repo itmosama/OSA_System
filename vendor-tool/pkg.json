@@ -1,0 +1,6 @@
+{
+  "assets": [
+    "views/**/*",
+    "../node_modules/pdfkit/js/**/*"
+  ]
+}

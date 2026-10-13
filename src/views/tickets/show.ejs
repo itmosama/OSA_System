@@ -1,0 +1,208 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <a href="/tickets" class="small text-decoration-none"><i class="bi bi-arrow-left"></i> Back to Tickets</a>
+    <div class="btn-group btn-group-sm">
+      <% if (prevTicketId) { %>
+        <a href="/tickets/<%= prevTicketId %>" class="btn btn-outline-secondary" title="Previous ticket"><i class="bi bi-chevron-left"></i> Prev</a>
+      <% } else { %>
+        <button class="btn btn-outline-secondary disabled" disabled><i class="bi bi-chevron-left"></i> Prev</button>
+      <% } %>
+      <% if (nextTicketId) { %>
+        <a href="/tickets/<%= nextTicketId %>" class="btn btn-outline-secondary" title="Next ticket">Next <i class="bi bi-chevron-right"></i></a>
+      <% } else { %>
+        <button class="btn btn-outline-secondary disabled" disabled>Next <i class="bi bi-chevron-right"></i></button>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+    <div>
+      <div class="text-muted small"><%= ticket.ticket_number %> <% if (ticketPhotos.length) { %><i class="bi bi-paperclip" title="<%= ticketPhotos.length %> photo(s) attached"></i><% } %></div>
+      <h4 class="mb-0"><%= ticket.subject %></h4>
+    </div>
+    <div class="text-end">
+      <div class="d-flex gap-2 justify-content-end align-items-center flex-wrap">
+        <span class="badge status-badge-<%= ticket.status.replace(' ','-') %> fs-6"><%= ticket.status %></span>
+        <%- include('../partials/priority-badge', { name: ticket.priority, suffix: ' priority' }) %>
+        <% if (perms.can_edit_tickets) { %>
+          <a href="/tickets/<%= ticket.id %>/edit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i> Edit</a>
+        <% } %>
+        <% if (perms.can_delete_tickets) { %>
+          <button type="button" class="btn btn-sm btn-outline-danger js-delete-btn"
+                  data-form="delete-ticket-form" data-label="ticket <%= ticket.ticket_number %>">
+            <i class="bi bi-trash"></i> Delete
+          </button>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <% if (perms.can_delete_tickets) { %>
+    <form id="delete-ticket-form" method="POST" action="/tickets/<%= ticket.id %>/delete" class="d-none"></form>
+  <% } %>
+
+  <% const allPhotos = ticketPhotos.concat(...Object.values(attachmentsByComment)); %>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card p-4 mb-3">
+        <h6 class="text-muted">Description</h6>
+        <p style="white-space: pre-wrap;"><%= ticket.description || '—' %></p>
+      </div>
+
+      <% if (allPhotos.length) { %>
+        <div class="card p-4 mb-3">
+          <h6 class="text-muted mb-2"><i class="bi bi-images"></i> All Photos (<%= allPhotos.length %>)</h6>
+          <div class="d-flex flex-wrap gap-2">
+            <% allPhotos.forEach(p => { %>
+              <img src="/uploads/<%= p.filename %>" data-full-src="/uploads/<%= p.filename %>" alt="Photo"
+                   class="rounded border photo-thumb" style="width:100px; height:100px; object-fit:cover;">
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="card p-4">
+        <h6 class="text-muted mb-3">Activity</h6>
+        <% comments.forEach(c => { %>
+          <div class="mb-3 <%= c.is_system ? 'text-muted small fst-italic' : '' %>">
+            <% if (!c.is_system) { %>
+              <div class="fw-semibold small"><%= c.author_name %> <span class="text-muted fw-normal">· <%= c.created_at %></span></div>
+            <% } else { %>
+              <div class="small"><i class="bi bi-arrow-repeat"></i> <%= c.body %> — <%= c.author_name %>, <%= c.created_at %></div>
+            <% } %>
+            <% if (!c.is_system) { %>
+              <div style="white-space: pre-wrap;"><%= c.body %></div>
+              <% if (attachmentsByComment[c.id]) { %>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                  <% attachmentsByComment[c.id].forEach(p => { %>
+                    <img src="/uploads/<%= p.filename %>" data-full-src="/uploads/<%= p.filename %>" alt="Attached photo"
+                         class="rounded border photo-thumb" style="width:90px; height:90px; object-fit:cover;">
+                  <% }) %>
+                </div>
+              <% } %>
+            <% } %>
+          </div>
+        <% }) %>
+        <% if (comments.length === 0) { %>
+          <p class="text-muted small">No activity yet.</p>
+        <% } %>
+
+        <form method="POST" action="/tickets/<%= ticket.id %>/comments" enctype="multipart/form-data" class="mt-3 border-top pt-3">
+          <div class="mb-2">
+            <textarea name="body" class="form-control" rows="3" placeholder="Add a comment or update..."></textarea>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small text-muted mb-1"><i class="bi bi-camera"></i> Attach photo(s) <span class="text-muted">(optional — take one with your phone or upload)</span></label>
+            <input type="file" name="photos" class="form-control form-control-sm" accept="image/*" multiple>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-chat-left-text"></i> Post Comment</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <% if (ticket.createdAtIso) { %>
+      <div class="card p-4 mb-3 <%= ticket.slaStatus ? 'sla-' + ticket.slaStatus : '' %>"
+           data-ticket-timer
+           data-created-at="<%= ticket.createdAtIso %>"
+           data-due-at="<%= ticket.dueAtIso || '' %>"
+           data-finished="<%= ticket.isFinished ? '1' : '0' %>"
+           data-finished-at="<%= ticket.finishedAtIso || '' %>">
+        <h6 class="text-muted mb-2"><i class="bi bi-stopwatch"></i> Time Open</h6>
+        <div class="fs-5 fw-semibold ticket-elapsed">—</div>
+        <% if (ticket.slaMinutes) { %>
+          <div class="text-muted small mb-2">SLA target: <%= formatMinutes(ticket.slaMinutes) %> for <%= ticket.priority %> priority</div>
+          <div class="ticket-sla-badge mb-2">
+            <% if (ticket.isOverdue) { %>
+              <i class="bi bi-exclamation-triangle-fill"></i> <%= ticket.isFinished ? 'Resolved late' : 'Overdue' %>
+            <% } else if (ticket.slaStatus === 'yellow') { %>
+              <i class="bi bi-clock-history"></i> <%= ticket.isFinished ? 'Resolved close to deadline' : 'Approaching SLA deadline' %>
+            <% } else { %>
+              <i class="bi bi-check-circle"></i> <%= ticket.isFinished ? 'Resolved within SLA' : 'On track' %>
+            <% } %>
+          </div>
+          <div class="text-muted small ticket-remaining d-none"></div>
+        <% } else { %>
+          <div class="text-muted small">No SLA target set for this priority — configure one in Admin → Priority SLA.</div>
+        <% } %>
+      </div>
+      <% } %>
+
+      <div class="card p-4 mb-3">
+        <h6 class="text-muted mb-3">Details</h6>
+        <dl class="row mb-0 small">
+          <dt class="col-5">Type</dt><dd class="col-7"><%= ticket.request_type_name || '—' %></dd>
+          <dt class="col-5">Handled by</dt><dd class="col-7"><%= ticket.handling_department_name || '—' %></dd>
+          <dt class="col-5">Requested dept.</dt><dd class="col-7"><%= ticket.department_name || '—' %></dd>
+          <dt class="col-5">Submitted from</dt><dd class="col-7"><%= ticket.requester_department_name || '—' %></dd>
+          <dt class="col-5">Room</dt><dd class="col-7"><%= ticket.room_number || '—' %></dd>
+          <dt class="col-5">Room status</dt><dd class="col-7"><%= ticket.room_occupancy || '—' %></dd>
+          <dt class="col-5">Requested by</dt><dd class="col-7"><%= ticket.created_by_name %></dd>
+          <% if (ticket.reported_by_name) { %>
+            <dt class="col-5">Staff name</dt><dd class="col-7"><%= ticket.reported_by_name %></dd>
+          <% } %>
+          <dt class="col-5">Assigned to</dt><dd class="col-7">
+            <% if (ticket.assigned_to_name) { %><span class="d-inline-flex align-items-center gap-2"><%- include('../partials/staff-avatar', { name: ticket.assigned_to_name, photo: ticket.assigned_staff_photo, size: 26 }) %><%= ticket.assigned_to_name %></span><% } else { %>Unassigned<% } %>
+          </dd>
+          <dt class="col-5">Created</dt><dd class="col-7"><%= ticket.created_at %></dd>
+          <dt class="col-5">Updated</dt><dd class="col-7"><%= ticket.updated_at %></dd>
+        </dl>
+      </div>
+
+      <% if (currentUser.role === 'admin' || currentUser.role === 'agent' || perms.can_manage_tickets) { %>
+      <div class="card p-4">
+        <h6 class="text-muted mb-3">Manage Ticket</h6>
+        <form method="POST" action="/tickets/<%= ticket.id %>/update">
+          <div class="mb-2">
+            <label class="form-label small">Status</label>
+            <select name="status" class="form-select form-select-sm">
+              <% statuses.forEach(s => { %>
+                <option value="<%= s %>" <%= ticket.status === s ? 'selected' : '' %>><%= s %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Priority</label>
+            <select name="priority" class="form-select form-select-sm">
+              <% priorities.forEach(p => { %>
+                <option value="<%= p.priority %>" <%= ticket.priority === p.priority ? 'selected' : '' %>><%= p.emoji %> <%= p.priority %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small">Assigned To</label>
+            <select name="assigned_staff_id" class="form-select form-select-sm">
+              <option value="">Unassigned</option>
+              <% staffGroups.forEach(g => { %>
+                <optgroup label="<%= g.name %>">
+                  <% g.members.forEach(m => { %>
+                    <option value="<%= m.id %>" <%= ticket.assigned_staff_id === m.id ? 'selected' : '' %>><%= m.full_name %></option>
+                  <% }) %>
+                </optgroup>
+              <% }) %>
+            </select>
+            <% if (staffGroups.length === 0) { %><div class="form-text">No staff added yet. An administrator can add them under Admin &rarr; Staff.</div><% } %>
+          </div>
+          <% if (ticket.room_id) { %>
+          <div class="mb-3">
+            <label class="form-label small">Room Status</label>
+            <select name="room_occupancy" class="form-select form-select-sm">
+              <option value="">— Not set —</option>
+              <% roomOccupancyValues.forEach(v => { %>
+                <option value="<%= v %>" <%= ticket.room_occupancy === v ? 'selected' : '' %>><%= v %></option>
+              <% }) %>
+            </select>
+          </div>
+          <% } %>
+          <button type="submit" class="btn btn-primary btn-sm w-100">Save Changes</button>
+        </form>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+<script src="/js/ticket-timer.js"></script>
+<script src="/js/lightbox.js"></script>
+<%- include('../partials/foot') %>

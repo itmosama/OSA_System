@@ -1,0 +1,396 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <div>
+    <main>
+
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h4 class="mb-0"><i class="bi bi-bar-chart-line"></i> Reports</h4>
+          <p class="text-muted small mb-0">Welcome back, <%= currentUser.full_name.split(' ')[0] %> — here's how things are running.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="/admin/reports/builder" class="btn btn-primary btn-sm"><i class="bi bi-sliders"></i> Custom Report</a>
+          <a href="/admin/reports/export?format=pdf&group_by=requested_dept" class="btn btn-outline-secondary btn-sm"><i class="bi bi-file-earmark-pdf"></i> Export PDF</a>
+          <a href="/admin/reports/export?format=xlsx&group_by=requested_dept" class="btn btn-outline-secondary btn-sm"><i class="bi bi-file-earmark-excel"></i> Export Excel</a>
+        </div>
+      </div>
+
+      <% if (scopedToDepartment) { %>
+        <div class="alert alert-info py-2 small">
+          <i class="bi bi-funnel"></i> These reports only include tickets for your department<%= scopeDepartmentName ? ' (' + scopeDepartmentName + ')' : '' %>.
+          <% if (!scopeDepartmentName) { %>Your account has no department set, so nothing is shown.<% } %>
+        </div>
+      <% } %>
+
+      <!-- Stat cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+          <div class="card report-stat-card h-100">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="text-muted small fw-medium">Total tickets</div>
+              <i class="bi bi-file-text text-muted"></i>
+            </div>
+            <div class="fs-2 fw-semibold mt-1"><%= totals.total %></div>
+            <div class="text-muted small">+<%= createdThisWeek %> this week</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+          <div class="card report-stat-card h-100">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="text-muted small fw-medium">Open tickets</div>
+              <i class="bi bi-clipboard-check text-muted"></i>
+            </div>
+            <div class="fs-2 fw-semibold mt-1"><%= totals.open_count %></div>
+            <div class="small <%= overdueTickets.length ? 'text-danger' : 'text-muted' %>">
+              <%= overdueTickets.length %> overdue
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+          <div class="card report-stat-card h-100">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="text-muted small fw-medium">Avg. resolution</div>
+              <i class="bi bi-stopwatch text-muted"></i>
+            </div>
+            <div class="fs-2 fw-semibold mt-1"><%= avgResolutionMinutes !== null ? formatMinutes(avgResolutionMinutes) : '—' %></div>
+            <div class="text-muted small">across resolved &amp; closed tickets</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+          <div class="card report-stat-card h-100">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="text-muted small fw-medium">SLA compliance</div>
+              <i class="bi bi-graph-up-arrow text-muted"></i>
+            </div>
+            <div class="fs-2 fw-semibold mt-1 <%= slaComplianceRate !== null && slaComplianceRate < 80 ? 'text-danger' : '' %>">
+              <%= slaComplianceRate !== null ? slaComplianceRate + '%' : '—' %>
+            </div>
+            <div class="text-muted small"><%= slaTracked ? `of ${slaTracked} tracked` : 'no data yet' %></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Throughput chart -->
+      <div class="card p-4 mb-4">
+        <h6 class="mb-0">Ticket throughput</h6>
+        <p class="text-muted small mb-3">Tickets opened vs. resolved/closed, last 14 days</p>
+        <canvas id="throughputChart" height="90"></canvas>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <!-- Active tickets progress -->
+        <div class="col-lg-6">
+          <div class="card p-4 h-100">
+            <h6 class="mb-0">Active tickets</h6>
+            <p class="text-muted small mb-3">Closest to (or past) their SLA deadline</p>
+            <% if (activeTickets.length === 0) { %>
+              <p class="text-success small mb-0"><i class="bi bi-check-circle"></i> No active tickets right now.</p>
+            <% } %>
+            <div class="d-flex flex-column gap-3">
+              <% activeTickets.forEach(t => { %>
+                <div class="report-active-ticket" style="cursor:pointer" onclick="location.href='/tickets/<%= t.id %>'">
+                  <div class="d-flex justify-content-between align-items-start gap-2">
+                    <h6 class="text-truncate mb-0 small fw-semibold"><%= t.ticket_number %> — <%= t.subject %></h6>
+                    <span class="badge status-badge-<%= t.status.replace(' ','-') %> flex-shrink-0"><%= t.status %></span>
+                  </div>
+                  <div class="text-muted small text-truncate"><%= t.request_type_name || 'Other' %> · <%= t.department_name || 'No department' %></div>
+                  <div class="d-flex align-items-center gap-2 mt-1">
+                    <% const pct = t.slaPercent === null ? 0 : Math.min(t.slaPercent, 100); %>
+                    <div class="progress flex-grow-1" style="height:6px;">
+                      <div class="progress-bar <%= t.isOverdue ? 'bg-danger' : (t.slaStatus === 'yellow' ? 'bg-warning' : 'bg-success') %>" style="width:<%= pct %>%"></div>
+                    </div>
+                    <span class="text-muted small flex-shrink-0" style="min-width:2.5rem; text-align:right;">
+                      <%= t.slaPercent === null ? '—' : t.slaPercent + '%' %>
+                    </span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center mt-1">
+                    <%- include('../partials/priority-badge', { name: t.priority }) %>
+                    <span class="text-muted small"><%= t.isOverdue ? 'Overdue' : 'Due ' + (t.dueAtIso ? new Date(t.dueAtIso).toLocaleString() : '—') %></span>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent activity -->
+        <div class="col-lg-6">
+          <div class="card p-4 h-100">
+            <h6 class="mb-0">Recent activity</h6>
+            <p class="text-muted small mb-3">Latest updates across every ticket</p>
+            <% if (recentActivity.length === 0) { %>
+              <p class="text-muted small mb-0">No activity yet.</p>
+            <% } %>
+            <ol class="list-unstyled d-flex flex-column gap-3 mb-0">
+              <% recentActivity.forEach(a => { %>
+                <li class="d-flex align-items-start gap-2" style="cursor:pointer" onclick="location.href='/tickets/<%= a.ticket_id %>'">
+                  <span class="report-activity-icon flex-shrink-0">
+                    <i class="bi <%= a.is_system ? 'bi-arrow-repeat' : 'bi-chat-left-text' %>"></i>
+                  </span>
+                  <div class="min-w-0">
+                    <p class="small mb-0">
+                      <span class="fw-semibold"><%= a.author_name || 'System' %></span>
+                      <span class="text-muted"><%= a.is_system ? a.body : ('commented on ' + a.ticket_number) %></span>
+                    </p>
+                    <p class="text-muted small mb-0"><%= a.created_at %></p>
+                  </div>
+                </li>
+              <% }) %>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <hr class="my-4">
+      <h5 class="mb-3">Detailed Breakdown</h5>
+
+      <div class="row g-3 mb-4">
+        <!-- By Status -->
+        <div class="col-md-6">
+          <div class="card p-4 h-100">
+            <h6 class="text-muted mb-3">Tickets by Status</h6>
+            <% byStatus.forEach(row => { %>
+              <div class="mb-2">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span><span class="badge status-badge-<%= row.label.replace(' ','-') %>">&nbsp;</span> <%= row.label %></span>
+                  <span class="fw-semibold"><%= row.count %></span>
+                </div>
+                <div class="progress" style="height:8px;">
+                  <div class="progress-bar status-badge-<%= row.label.replace(' ','-') %>" style="width:<%= Math.round(row.count / maxCount(byStatus) * 100) %>%"></div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+
+        <!-- By Priority -->
+        <div class="col-md-6">
+          <div class="card p-4 h-100">
+            <h6 class="text-muted mb-3">Tickets by Priority</h6>
+            <% byPriority.forEach(row => { %>
+              <div class="mb-2">
+                <div class="d-flex justify-content-between small mb-1">
+                  <%- include('../partials/priority-badge', { name: row.label }) %>
+                  <span class="fw-semibold"><%= row.count %></span>
+                </div>
+                <div class="progress" style="height:8px;">
+                  <div class="progress-bar" style="background-color:<%= (priorityMeta[row.label] || {}).color || '#6c757d' %>;width:<%= Math.round(row.count / maxCount(byPriority) * 100) %>%"></div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+
+        <!-- By Reporting Department -->
+        <div class="col-md-6">
+          <div class="card p-4 h-100">
+            <h6 class="text-muted mb-3">Tickets by Reporting Department</h6>
+            <% if (byDepartment.length === 0) { %><p class="text-muted small mb-0">No data yet.</p><% } %>
+            <% byDepartment.forEach(row => { %>
+              <div class="mb-2">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span><%= row.label %></span>
+                  <span class="fw-semibold"><%= row.count %></span>
+                </div>
+                <div class="progress" style="height:8px;">
+                  <div class="progress-bar bg-primary" style="width:<%= Math.round(row.count / maxCount(byDepartment) * 100) %>%"></div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+
+        <!-- By Handling Department -->
+        <div class="col-md-6">
+          <div class="card p-4 h-100">
+            <h6 class="text-muted mb-3">Tickets by Handling Department</h6>
+            <% if (byHandlingDepartment.length === 0) { %><p class="text-muted small mb-0">No data yet.</p><% } %>
+            <% byHandlingDepartment.forEach(row => { %>
+              <div class="mb-2">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span><%= row.label %></span>
+                  <span class="fw-semibold"><%= row.count %></span>
+                </div>
+                <div class="progress" style="height:8px;">
+                  <div class="progress-bar bg-info" style="width:<%= Math.round(row.count / maxCount(byHandlingDepartment) * 100) %>%"></div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+
+        <!-- By Request Type -->
+        <div class="col-md-6">
+          <div class="card p-4 h-100">
+            <h6 class="text-muted mb-3">Tickets by Request Type</h6>
+            <% if (byRequestType.length === 0) { %><p class="text-muted small mb-0">No data yet.</p><% } %>
+            <% byRequestType.forEach(row => { %>
+              <div class="mb-2">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span><%= row.label %></span>
+                  <span class="fw-semibold"><%= row.count %></span>
+                </div>
+                <div class="progress" style="height:8px;">
+                  <div class="progress-bar bg-secondary" style="width:<%= Math.round(row.count / maxCount(byRequestType) * 100) %>%"></div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+
+        <!-- By Agent -->
+        <div class="col-md-6">
+          <div class="card p-4 h-100">
+            <h6 class="text-muted mb-3">Tickets by Assigned Agent</h6>
+            <% if (byAgent.length === 0) { %><p class="text-muted small mb-0">No data yet.</p><% } %>
+            <% byAgent.forEach(row => { %>
+              <div class="mb-2">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span><%= row.label %></span>
+                  <span class="fw-semibold"><%= row.count %></span>
+                </div>
+                <div class="progress" style="height:8px;">
+                  <div class="progress-bar bg-dark" style="width:<%= Math.round(row.count / maxCount(byAgent) * 100) %>%"></div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+
+        <!-- By Staff (handled) -->
+        <div class="col-md-6">
+          <div class="card p-4 h-100">
+            <h6 class="text-muted mb-3">Tickets Handled by Staff</h6>
+            <%
+              const staffList = [];
+              staffStats.forEach(g => g.members.forEach(m => staffList.push(m)));
+              staffList.sort((a, b) => b.total - a.total || a.full_name.localeCompare(b.full_name));
+              const staffMax = Math.max(1, ...staffList.map(m => m.total));
+            %>
+            <% if (staffList.length === 0) { %><p class="text-muted small mb-0">No tickets have been assigned to staff yet.</p><% } %>
+            <% staffList.forEach(m => { %>
+              <div class="mb-2">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span class="d-inline-flex align-items-center gap-2"><%- include('../partials/staff-avatar', { name: m.full_name, photo: m.photo, size: 24 }) %><span><a href="/tickets?staff_id=<%= m.id %>" class="text-decoration-none text-body fw-semibold"><%= m.full_name %></a> <span class="text-muted">· <%= m.department_name %></span></span></span>
+                  <span class="fw-semibold"><%= m.total %> <span class="text-muted fw-normal">(<%= m.completed %> done)</span></span>
+                </div>
+                <div class="progress" style="height:8px;">
+                  <div class="progress-bar bg-primary" style="width:<%= Math.round(m.total / staffMax * 100) %>%"></div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Staff performance -->
+      <div class="card p-4 mb-4">
+        <h6 class="text-muted mb-3"><i class="bi bi-person-badge"></i> Staff Performance</h6>
+        <% if (staffStats.length === 0) { %>
+          <p class="text-muted small mb-0">No tickets have been assigned to staff yet. Add staff under Admin &rarr; Staff, then assign them on each ticket.</p>
+        <% } %>
+        <% staffStats.forEach(group => { %>
+          <div class="fw-semibold small mt-2 mb-1"><i class="bi bi-diagram-3"></i> <%= group.department %></div>
+          <div class="table-responsive mb-2">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light"><tr><th>Staff</th><th class="text-end">Assigned</th><th class="text-end">Completed</th><th class="text-end">Still open</th><th class="text-end">Avg. time to finish</th><th class="text-end">Within SLA</th></tr></thead>
+              <tbody>
+                <% group.members.forEach(m => { %>
+                  <tr>
+                    <td><a href="/tickets?staff_id=<%= m.id %>&view=done" class="text-decoration-none"><%= m.full_name %></a><% if (!m.active) { %> <span class="badge text-bg-secondary">inactive</span><% } %></td>
+                    <td class="text-end"><a href="/tickets?staff_id=<%= m.id %>" class="text-decoration-none"><%= m.total %></a></td>
+                    <td class="text-end"><%= m.completed %></td>
+                    <td class="text-end"><%= m.open %></td>
+                    <td class="text-end"><%= m.avgMinutes === null ? '—' : formatMinutes(m.avgMinutes) %></td>
+                    <td class="text-end"><%= m.slaRate === null ? '—' : m.slaRate + '%' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% }) %>
+      </div>
+
+      <!-- Overdue tickets -->
+      <div class="card p-4">
+        <h6 class="text-muted mb-3"><i class="bi bi-exclamation-triangle-fill text-danger"></i> Currently Overdue (<%= overdueTickets.length %>)</h6>
+        <% if (overdueTickets.length === 0) { %>
+          <p class="text-success small mb-0"><i class="bi bi-check-circle"></i> No overdue tickets right now.</p>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light"><tr><th>#</th><th>Subject</th><th>Type</th><th>Room</th><th>Priority</th><th>Status</th><th>Created</th></tr></thead>
+              <tbody>
+                <% overdueTickets.forEach(t => { %>
+                  <tr style="cursor:pointer" onclick="location.href='/tickets/<%= t.id %>'">
+                    <td class="text-muted"><%= t.ticket_number %></td>
+                    <td><%= t.subject %></td>
+                    <td><%= t.request_type_name || '—' %></td>
+                    <td><%= t.room_number || '—' %></td>
+                    <td><%- include('../partials/priority-badge', { name: t.priority }) %></td>
+                    <td><span class="badge status-badge-<%= t.status.replace(' ','-') %>"><%= t.status %></span></td>
+                    <td class="text-muted small"><%= t.created_at %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  (function () {
+    const ctx = document.getElementById('throughputChart');
+    if (!ctx || typeof Chart === 'undefined') return;
+    const labels = <%- JSON.stringify(throughputChart.labels) %>;
+    const opened = <%- JSON.stringify(throughputChart.opened) %>;
+    const resolved = <%- JSON.stringify(throughputChart.resolved) %>;
+
+    const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
+    gradient.addColorStop(0, 'rgba(13,110,253,0.25)');
+    gradient.addColorStop(1, 'rgba(13,110,253,0.02)');
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Opened',
+            data: opened,
+            borderColor: '#6c757d',
+            borderDash: [4, 4],
+            backgroundColor: 'transparent',
+            tension: 0.35,
+            pointRadius: 0,
+            borderWidth: 2,
+          },
+          {
+            label: 'Resolved / Closed',
+            data: resolved,
+            borderColor: '#0d6efd',
+            backgroundColor: gradient,
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0,
+            borderWidth: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true, pointStyle: 'circle' } } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(0,0,0,0.06)' } },
+        },
+      },
+    });
+  })();
+</script>
+<%- include('../partials/foot') %>

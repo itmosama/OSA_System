@@ -1,0 +1,106 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-binoculars"></i> Lost &amp; Found<% if (filters.status) { %> <span class="text-muted fs-6 fw-normal">— <%= filters.status %></span><% } %></h4>
+    <a href="/lost-found/new" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Report Found Item</a>
+  </div>
+
+
+  <%
+    const lfStatusMeta = {
+      'In Storage':        { icon: 'bi-archive-fill',      color: '#0d6efd' },
+      'Returned to Guest':  { icon: 'bi-person-check-fill', color: '#198754' },
+      'Disposed':          { icon: 'bi-trash3-fill',       color: '#6c757d' },
+    };
+  %>
+
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">
+      <a href="/lost-found" class="status-tile <%= !filters.status ? 'active' : '' %>" style="--tile-color:#495057;">
+        <div class="card h-100">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-grid-fill status-tile-icon"></i>
+            <div>
+              <div class="text-muted status-tile-label">All</div>
+              <div class="fw-bold status-tile-count"><%= stats.total %></div>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <% stats.byStatus.forEach(s => { const meta = lfStatusMeta[s.status]; %>
+    <div class="col-6 col-md-3">
+      <a href="/lost-found?status=<%= encodeURIComponent(s.status) %>" class="status-tile <%= filters.status === s.status ? 'active' : '' %>" style="--tile-color:<%= meta.color %>;">
+        <div class="card h-100">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi <%= meta.icon %> status-tile-icon"></i>
+            <div>
+              <div class="text-muted status-tile-label"><%= s.status %></div>
+              <div class="fw-bold status-tile-count"><%= s.count %></div>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <% }) %>
+  </div>
+
+  <div class="card p-3 mb-3">
+    <form method="GET" class="row g-2 align-items-end">
+      <input type="hidden" name="status" value="<%= filters.status %>">
+      <div class="col-md-8">
+        <label class="form-label small text-muted mb-1">Search</label>
+        <input type="text" name="q" class="form-control form-control-sm" placeholder="Item description or location..." value="<%= filters.q %>">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-sm btn-primary w-100" type="submit">Search</button>
+      </div>
+      <div class="col-md-2">
+        <a href="/lost-found" class="btn btn-sm btn-outline-secondary w-100">Clear</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Serial #</th>
+            <th>Item</th>
+            <th>Found At / Location</th>
+            <th>Found By</th>
+            <th>Logged</th>
+            <th>Status</th>
+            <th>Guest Contacted</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (items.length === 0) { %>
+            <tr><td colspan="7" class="text-center text-muted py-4">No items found.</td></tr>
+          <% } %>
+          <% items.forEach(it => { %>
+            <tr style="cursor:pointer" onclick="location.href='/lost-found/<%= it.id %>'">
+              <td class="text-muted"><%= it.serial_number %></td>
+              <td><%= it.item_description %></td>
+              <td><%= it.location || '—' %></td>
+              <td><%= it.found_by_name || '—' %></td>
+              <td class="text-muted small"><%= it.created_at %></td>
+              <td><span class="badge status-badge-<%= it.status.replace(/ /g,'-') %>"><%= it.status %></span></td>
+              <td>
+                <% if (it.guest_contacted) { %>
+                  <span class="badge text-bg-success"><i class="bi bi-check-lg"></i> Yes</span>
+                <% } else { %>
+                  <span class="badge text-bg-secondary">No</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<%- include('../partials/foot') %>

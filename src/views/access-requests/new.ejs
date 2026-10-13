@@ -1,0 +1,166 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h4 class="mb-3"><i class="bi bi-person-badge"></i> New Joiner IT Access Request</h4>
+
+  <div class="card p-4 mx-auto" style="max-width: 820px;">
+    <% if (error) { %>
+      <div class="alert alert-danger py-2"><%= error %></div>
+    <% } %>
+    <form method="POST" action="/access-requests">
+      <h6 class="text-muted">Employee Details</h6>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Full Name (as per passport) <span class="text-danger">*</span></label>
+          <input type="text" name="employee_full_name" class="form-control" value="<%= values.employee_full_name %>" required>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Employee ID</label>
+          <input type="text" name="employee_id" class="form-control" value="<%= values.employee_id %>">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Job Title</label>
+          <input type="text" name="job_title" class="form-control" value="<%= values.job_title %>">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Department</label>
+          <select name="department_id" class="form-select">
+            <option value="">— Select —</option>
+            <% departments.forEach(d => { %>
+              <option value="<%= d.id %>" <%= String(values.department_id) === String(d.id) ? 'selected' : '' %>><%= d.name %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Reporting Manager</label>
+          <input type="text" name="reporting_manager" class="form-control" value="<%= values.reporting_manager %>">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Mobile Number</label>
+          <input type="text" name="mobile_number" class="form-control" value="<%= values.mobile_number %>">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Employment Type <span class="text-danger">*</span></label>
+          <select name="employment_type" id="employmentType" class="form-select" required>
+            <% employmentTypes.forEach(t => { %>
+              <option value="<%= t %>" <%= values.employment_type === t ? 'selected' : '' %>><%= t %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-4 mb-3" id="contractEndWrap">
+          <label class="form-label">Contract End Date <span class="text-danger" id="contractEndReq">*</span></label>
+          <input type="date" name="contract_end_date" id="contractEndDate" class="form-control" value="<%= values.contract_end_date %>">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Start Date <span class="text-danger">*</span></label>
+          <input type="date" name="start_date" id="startDate" class="form-control" value="<%= values.start_date %>" required>
+          <div class="form-text text-warning d-none" id="startDateWarning">
+            <i class="bi bi-exclamation-triangle-fill"></i> Start date is less than 3 working days away.
+          </div>
+        </div>
+      </div>
+
+      <hr class="my-4">
+      <h6 class="text-muted">Hardware &amp; Equipment</h6>
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Desktop / Laptop</label>
+          <select name="hw_device_type" class="form-select">
+            <option value="">— Not needed —</option>
+            <option value="New" <%= values.hw_device_type === 'New' ? 'selected' : '' %>>New</option>
+            <option value="Existing" <%= values.hw_device_type === 'Existing' ? 'selected' : '' %>>Existing</option>
+          </select>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Asset Tag <span class="text-muted small">(if existing)</span></label>
+          <input type="text" name="hw_asset_tag" class="form-control" value="<%= values.hw_asset_tag %>">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Monitor / Peripherals</label>
+          <input type="text" name="hw_monitor_peripherals" class="form-control" value="<%= values.hw_monitor_peripherals %>">
+        </div>
+      </div>
+      <div class="row align-items-end">
+        <div class="col-md-3 mb-3">
+          <div class="form-check">
+            <input type="checkbox" name="hw_phone_extension_needed" value="1" class="form-check-input" id="extNeeded" <%= values.hw_phone_extension_needed ? 'checked' : '' %>>
+            <label class="form-check-label" for="extNeeded">Phone extension needed</label>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <input type="text" name="hw_phone_extension" class="form-control" placeholder="Extension number" value="<%= values.hw_phone_extension %>">
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="form-check">
+            <input type="checkbox" name="hw_mobile_radio" value="1" class="form-check-input" id="mobileRadio" <%= values.hw_mobile_radio ? 'checked' : '' %>>
+            <label class="form-check-label" for="mobileRadio">Mobile / Radio</label>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="form-check">
+            <input type="checkbox" name="hw_printer_needed" value="1" class="form-check-input" id="printerNeeded" <%= values.hw_printer_needed ? 'checked' : '' %>>
+            <label class="form-check-label" for="printerNeeded">Printer access</label>
+          </div>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Printer Location</label>
+        <input type="text" name="hw_printer_location" class="form-control" value="<%= values.hw_printer_location %>">
+      </div>
+
+      <div class="alert alert-secondary small">
+        <i class="bi bi-info-circle"></i> The Access Required section (systems, access levels) is filled in by the
+        Head of Department during their approval step, right after you submit this request.
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" name="action" value="submit" class="btn btn-primary"><i class="bi bi-send"></i> Submit Request</button>
+        <button type="submit" name="action" value="draft" class="btn btn-outline-secondary"><i class="bi bi-save"></i> Save as Draft</button>
+        <a href="/access-requests" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+(function () {
+  var typeSel = document.getElementById('employmentType');
+  var endWrap = document.getElementById('contractEndWrap');
+  var endInput = document.getElementById('contractEndDate');
+  function syncContractEnd() {
+    var needed = typeSel.value === 'Temporary' || typeSel.value === 'Intern';
+    endInput.required = needed;
+    endWrap.style.opacity = needed ? '1' : '0.6';
+  }
+  typeSel.addEventListener('change', syncContractEnd);
+  syncContractEnd();
+
+  var startInput = document.getElementById('startDate');
+  var warning = document.getElementById('startDateWarning');
+  function countWorkingDays(from, to) {
+    var count = 0;
+    var d = new Date(from);
+    while (d < to) {
+      d.setDate(d.getDate() + 1);
+      var day = d.getDay();
+      if (day !== 0 && day !== 6) count++;
+    }
+    return count;
+  }
+  function syncStartWarning() {
+    if (!startInput.value) { warning.classList.add('d-none'); return; }
+    var target = new Date(startInput.value + 'T00:00:00');
+    var today = new Date(); today.setHours(0,0,0,0);
+    var workingDays = countWorkingDays(today, target);
+    warning.classList.toggle('d-none', !(target > today && workingDays < 3));
+  }
+  startInput.addEventListener('change', syncStartWarning);
+  syncStartWarning();
+})();
+</script>
+<%- include('../partials/foot') %>

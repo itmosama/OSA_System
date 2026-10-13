@@ -1,0 +1,240 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <%
+    const statusColors = {
+      'Draft': '#6c757d', 'Submitted': '#0d6efd', 'Pending HOD': '#fd7e14', 'Pending HR': '#fd7e14',
+      'Pending IT Manager': '#fd7e14', 'Pending GM': '#dc3545', 'Approved': '#198754', 'In Progress': '#0dcaf0',
+      'Awaiting User Acknowledgment': '#6f42c1', 'Closed': '#343a40', 'Rejected': '#dc3545', 'Cancelled': '#6c757d',
+    };
+    const requiredItems = items.filter(i => i.required);
+  %>
+  <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0"><i class="bi bi-person-badge"></i> <%= request.reference_number %></h4>
+      <div class="text-muted small"><%= request.employee_full_name %> — <%= request.department_name || 'No department' %></div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge" style="background-color:<%= statusColors[request.status] %>;"><%= request.status %></span>
+      <a href="/access-requests/<%= request.id %>/pdf" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+      <a href="/access-requests" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+    </div>
+  </div>
+
+  <% if (request.status === 'Rejected' && request.rejection_reason) { %>
+    <div class="alert alert-danger"><strong>Rejected:</strong> <%= request.rejection_reason %></div>
+  <% } %>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card p-3 mb-3">
+        <h6 class="text-muted">Employee Details</h6>
+        <div class="row small">
+          <div class="col-6 mb-2"><span class="text-muted">Employee ID:</span> <%= request.employee_id || '—' %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Job Title:</span> <%= request.job_title || '—' %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Reporting Manager:</span> <%= request.reporting_manager || '—' %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Mobile:</span> <%= request.mobile_number || '—' %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Employment Type:</span> <%= request.employment_type %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Start Date:</span> <%= request.start_date %></div>
+          <% if (request.contract_end_date) { %>
+            <div class="col-6 mb-2"><span class="text-muted">Contract End:</span> <%= request.contract_end_date %></div>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="card p-3 mb-3">
+        <h6 class="text-muted">Hardware &amp; Equipment</h6>
+        <div class="row small">
+          <div class="col-6 mb-2"><span class="text-muted">Device:</span> <%= request.hw_device_type || '—' %><% if (request.hw_asset_tag) { %> (<%= request.hw_asset_tag %>)<% } %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Phone Extension:</span> <%= request.hw_phone_extension_needed ? (request.hw_phone_extension || 'Needed') : 'No' %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Mobile / Radio:</span> <%= request.hw_mobile_radio ? 'Yes' : 'No' %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Printer:</span> <%= request.hw_printer_needed ? (request.hw_printer_location || 'Needed') : 'No' %></div>
+          <% if (request.hw_monitor_peripherals) { %>
+            <div class="col-12 mb-2"><span class="text-muted">Monitor / Peripherals:</span> <%= request.hw_monitor_peripherals %></div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Access Required -->
+      <div class="card p-3 mb-3">
+        <h6 class="text-muted">Access Required <% if (request.gm_required) { %><span class="badge text-bg-danger ms-1">GM approval required</span><% } %></h6>
+
+        <% if (isHodStep && canDecideNow) { %>
+          <form method="POST" action="/access-requests/<%= request.id %>/hod-decision">
+            <div class="table-responsive mb-2">
+              <table class="table table-sm align-middle">
+                <thead><tr><th>Required</th><th>System</th><th>Access Level</th><th>Remarks</th></tr></thead>
+                <tbody>
+                  <% systems.forEach(sys => { %>
+                    <tr>
+                      <td><input type="checkbox" class="form-check-input" name="required_<%= sys.id %>" value="1"></td>
+                      <td><%= sys.name %><% if (sys.gm_always) { %> <i class="bi bi-shield-exclamation text-danger" title="Always requires GM approval"></i><% } %></td>
+                      <td>
+                        <% if (sys.levels.length) { %>
+                          <select name="level_<%= sys.id %>" class="form-select form-select-sm">
+                            <option value="">—</option>
+                            <% sys.levels.forEach(l => { %>
+                              <option value="<%= l.id %>"><%= l.name %><%= l.is_admin_level ? ' (admin-level)' : '' %></option>
+                            <% }) %>
+                          </select>
+                        <% } else { %>
+                          <span class="text-muted small">n/a</span>
+                        <% } %>
+                      </td>
+                      <td><input type="text" name="remarks_<%= sys.id %>" class="form-control form-control-sm"></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">Comments</label>
+              <textarea name="comments" class="form-control form-control-sm" rows="2"></textarea>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" name="decision" value="Approved" class="btn btn-success btn-sm"><i class="bi bi-check-lg"></i> Approve</button>
+              <button type="submit" name="decision" value="Rejected" class="btn btn-outline-danger btn-sm"><i class="bi bi-x-lg"></i> Reject</button>
+            </div>
+          </form>
+        <% } else if (requiredItems.length === 0) { %>
+          <p class="text-muted small mb-0">Not filled in yet — pending Head of Department review.</p>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th>System</th><th>Access Level</th><th>Remarks</th></tr></thead>
+              <tbody>
+                <% requiredItems.forEach(i => { %>
+                  <tr>
+                    <td><%= i.system_name %></td>
+                    <td><%= i.level_name || '—' %><% if (i.level_is_admin) { %> <span class="badge text-bg-danger">admin</span><% } %></td>
+                    <td><%= i.remarks || '—' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Approval step for HR / IT Manager / GM -->
+      <% if (canDecideNow && !isHodStep) { %>
+        <div class="card p-3 mb-3">
+          <h6 class="text-muted"><%= currentStep %> Approval</h6>
+          <form method="POST" action="/access-requests/<%= request.id %>/decision">
+            <div class="mb-2">
+              <label class="form-label small">Comments</label>
+              <textarea name="comments" class="form-control form-control-sm" rows="2"></textarea>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" name="decision" value="Approved" class="btn btn-success btn-sm"><i class="bi bi-check-lg"></i> Approve</button>
+              <button type="submit" name="decision" value="Rejected" class="btn btn-outline-danger btn-sm"><i class="bi bi-x-lg"></i> Reject</button>
+            </div>
+          </form>
+        </div>
+      <% } %>
+
+      <!-- Draft: submitter can submit -->
+      <% if (request.status === 'Draft' && (currentUser.id === request.created_by || currentUser.role === 'admin')) { %>
+        <div class="card p-3 mb-3">
+          <p class="text-muted small mb-2">This request is still a draft and hasn't entered the approval workflow yet.</p>
+          <form method="POST" action="/access-requests/<%= request.id %>/submit">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-send"></i> Submit for Approval</button>
+          </form>
+        </div>
+      <% } %>
+
+      <!-- IT fulfilment -->
+      <% if (canFulfil && request.status === 'Approved') { %>
+        <div class="card p-3 mb-3">
+          <p class="text-muted small mb-2">Approved — ready for IT to begin provisioning.</p>
+          <form method="POST" action="/access-requests/<%= request.id %>/start">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-play-fill"></i> Start Fulfilment</button>
+          </form>
+        </div>
+      <% } %>
+
+      <% if (canFulfil && request.status === 'In Progress') { %>
+        <div class="card p-3 mb-3">
+          <h6 class="text-muted">IT Completion Checklist</h6>
+          <form method="POST" action="/access-requests/<%= request.id %>/checklist">
+            <div class="mb-2">
+              <label class="form-label small">Accounts Created (usernames)</label>
+              <input type="text" name="accounts_created" class="form-control form-control-sm" value="<%= checklist ? (checklist.accounts_created || '') : '' %>">
+            </div>
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" name="equipment_issued" value="1" id="cl1" <%= checklist && checklist.equipment_issued ? 'checked' : '' %>>
+              <label class="form-check-label small" for="cl1">Equipment issued and asset register updated</label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" name="asset_register_updated" value="1" id="cl2" <%= checklist && checklist.asset_register_updated ? 'checked' : '' %>>
+              <label class="form-check-label small" for="cl2">Asset register updated</label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" name="credentials_handed_over" value="1" id="cl3" <%= checklist && checklist.credentials_handed_over ? 'checked' : '' %>>
+              <label class="form-check-label small" for="cl3">Credentials handed over securely</label>
+            </div>
+            <div class="form-check mb-2">
+              <input type="checkbox" class="form-check-input" name="user_briefed" value="1" id="cl4" <%= checklist && checklist.user_briefed ? 'checked' : '' %>>
+              <label class="form-check-label small" for="cl4">User briefed on IT policies</label>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">Closing Notes</label>
+              <textarea name="closing_notes" class="form-control form-control-sm" rows="2"><%= checklist ? (checklist.closing_notes || '') : '' %></textarea>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" name="action" value="save" class="btn btn-outline-secondary btn-sm">Save</button>
+              <button type="submit" name="action" value="complete" class="btn btn-primary btn-sm"><i class="bi bi-check2-all"></i> Mark Complete</button>
+            </div>
+          </form>
+        </div>
+      <% } %>
+
+      <% if (canFulfil && request.status === 'Awaiting User Acknowledgment') { %>
+        <div class="card p-3 mb-3">
+          <p class="small mb-2">
+            The employee confirms receipt of accounts/equipment and agreement to the IT Acceptable Use Policy
+            and Data Security Policy. Record this once the employee has acknowledged in person.
+          </p>
+          <form method="POST" action="/access-requests/<%= request.id %>/acknowledge">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check2-square"></i> Record Acknowledgment &amp; Close</button>
+          </form>
+        </div>
+      <% } %>
+
+      <% if (request.ack_confirmed) { %>
+        <div class="alert alert-success small mb-3"><i class="bi bi-check2-square"></i> User acknowledgment confirmed on <%= request.ack_at %>.</div>
+      <% } %>
+
+      <% if (canCancel) { %>
+        <div class="card p-3 mb-3">
+          <form method="POST" action="/access-requests/<%= request.id %>/cancel">
+            <label class="form-label small text-muted">Cancel this request</label>
+            <div class="d-flex gap-2">
+              <input type="text" name="reason" class="form-control form-control-sm" placeholder="Reason for cancelling">
+              <button type="submit" class="btn btn-outline-danger btn-sm text-nowrap"><i class="bi bi-x-circle"></i> Cancel Request</button>
+            </div>
+          </form>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card p-3">
+        <h6 class="text-muted">Timeline</h6>
+        <ul class="list-unstyled small mb-0">
+          <% audit.forEach(a => { %>
+            <li class="mb-2 pb-2 border-bottom">
+              <div><%= a.action %></div>
+              <% if (a.details) { %><div class="text-muted"><%= a.details %></div><% } %>
+              <div class="text-muted"><%= a.user_name || 'System' %> — <%= a.created_at %></div>
+            </li>
+          <% }) %>
+          <% if (audit.length === 0) { %>
+            <li class="text-muted">No activity yet.</li>
+          <% } %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

@@ -1,0 +1,46 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container-fluid">
+  <div class="admin-shell">
+    <%- include('_sidebar') %>
+    <main class="admin-main">
+      <h4 class="mb-3"><i class="bi bi-trash3"></i> Deleted Items</h4>
+      <p class="text-muted small" style="max-width:620px;">
+        A record of everything that has been deleted from the system — tickets, lost &amp; found
+        items, departments, rooms, and more — along with who deleted it, when, and why.
+      </p>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Type</th>
+                <th>Item</th>
+                <th>Reason</th>
+                <th>Deleted By</th>
+                <th>Deleted At</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (entries.length === 0) { %>
+                <tr><td colspan="5" class="text-center text-muted py-4">Nothing has been deleted yet.</td></tr>
+              <% } %>
+              <% entries.forEach(e => { %>
+                <tr>
+                  <td><span class="badge text-bg-secondary"><%= e.item_type %></span></td>
+                  <td><%= e.item_label %></td>
+                  <td class="text-muted"><%= e.reason %></td>
+                  <td><%= e.deleted_by_name || 'Unknown' %></td>
+                  <td class="text-muted small"><%= e.deleted_at %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/admin-sidebar.js"></script>
+<%- include('../partials/foot') %>

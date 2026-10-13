@@ -1,0 +1,236 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0"><i class="bi bi-ticket-perforated"></i> <%= view === 'done' ? 'Completed Tickets' : 'Active Tickets' %><% if (filters.status) { %> <span class="text-muted fs-6 fw-normal">— <%= filters.status %></span><% } %></h4>
+    <% if (canSubmit) { %><a href="/tickets/new" class="btn btn-primary"><i class="bi bi-plus-circle"></i> New Ticket</a><% } %>
+  </div>
+
+
+  <%
+    const statusMeta = {
+      'Open':         { icon: 'bi-envelope-open-fill', color: '#0d6efd' },
+      'In Progress':  { icon: 'bi-arrow-repeat',        color: '#fd7e14' },
+      'On Hold':      { icon: 'bi-pause-circle-fill',   color: '#6c757d' },
+      'Resolved':     { icon: 'bi-check-circle-fill',   color: '#198754' },
+      'Closed':       { icon: 'bi-lock-fill',           color: '#343a40' },
+    };
+    const canChangeStatus = currentUser.role === 'admin' || currentUser.role === 'agent' || perms.can_manage_tickets;
+    const allStatuses = Object.keys(statusMeta);
+    const qs = (extra) => {
+      const params = new URLSearchParams();
+      if (filters.department_id) params.set('department_id', filters.department_id);
+      if (filters.mine) params.set('mine', filters.mine);
+      if (filters.staff_id) params.set('staff_id', filters.staff_id);
+      Object.keys(extra).forEach(k => { if (extra[k]) params.set(k, extra[k]); });
+      const s = params.toString();
+      return '/tickets' + (s ? '?' + s : '');
+    };
+  %>
+
+  <!-- Active / Completed tabs -->
+  <ul class="nav nav-tabs mb-3 flex-wrap">
+    <li class="nav-item">
+      <a class="nav-link <%= view === 'active' ? 'active fw-semibold' : '' %>" href="<%= qs({ view: 'active' }) %>">
+        <i class="bi bi-lightning-charge"></i> Active Tickets
+        <span class="badge text-bg-secondary ms-1"><%= stats.activeTotal %></span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link <%= view === 'done' ? 'active fw-semibold' : '' %>" href="<%= qs({ view: 'done' }) %>">
+        <i class="bi bi-check2-all"></i> Completed Tickets
+        <span class="badge text-bg-secondary ms-1"><%= stats.doneTotal %></span>
+      </a>
+    </li>
+    <% if (stats.overdue > 0 && view === 'active') { %>
+      <li class="nav-item ms-auto d-flex align-items-center pb-1">
+        <span class="osa-sla-alert" role="alert">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span><strong><%= stats.overdue %></strong> ticket<%= stats.overdue === 1 ? '' : 's' %> past its SLA resolution time</span>
+        </span>
+      </li>
+    <% } %>
+  </ul>
+
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">
+      <a href="<%= qs({ view }) %>" class="status-tile <%= !filters.status ? 'active' : '' %>" style="--tile-color:#495057;">
+        <div class="card h-100">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-grid-fill status-tile-icon"></i>
+            <div>
+              <div class="text-muted status-tile-label">All <%= view === 'done' ? 'Completed' : 'Active' %></div>
+              <div class="fw-bold status-tile-count"><%= view === 'done' ? stats.doneTotal : stats.activeTotal %></div>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <% stats.byStatus.forEach(s => { const meta = statusMeta[s.status]; %>
+    <div class="col-6 col-md-3">
+      <a href="<%= qs({ status: s.status }) %>" class="status-tile <%= filters.status === s.status ? 'active' : '' %>" style="--tile-color:<%= meta.color %>;">
+        <div class="card h-100">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi <%= meta.icon %> status-tile-icon"></i>
+            <div>
+              <div class="text-muted status-tile-label"><%= s.status %></div>
+              <div class="fw-bold status-tile-count"><%= s.count %></div>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <% }) %>
+  </div>
+
+  <div class="card p-3 mb-3">
+    <form method="GET" class="row g-2 align-items-end">
+      <input type="hidden" name="view" value="<%= view %>">
+      <% if (filters.staff_id) { %>
+        <input type="hidden" name="staff_id" value="<%= filters.staff_id %>">
+        <div class="col-12"><span class="badge text-bg-primary"><i class="bi bi-person-badge"></i> Handled by <%= staffName || 'staff member' %>
+          <a href="/tickets?view=<%= view %>" class="text-white ms-1" title="Remove filter">&times;</a></span></div>
+      <% } %>
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Status</label>
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All <%= view === 'done' ? 'Completed' : 'Active' %></option>
+          <% viewStatuses.forEach(s => { %>
+            <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+          <% }) %>
+        </select>
+      </div>
+      <% if (currentUser.role !== 'requester') { %>
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Department</label>
+        <select name="department_id" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All</option>
+          <% departments.forEach(d => { %>
+            <option value="<%= d.id %>" <%= String(filters.department_id) === String(d.id) ? 'selected' : '' %>><%= d.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <div class="form-check mt-4">
+          <input class="form-check-input" type="checkbox" name="mine" value="1" id="mineCheck"
+            <%= filters.mine === '1' ? 'checked' : '' %> onchange="this.form.submit()">
+          <label class="form-check-label small" for="mineCheck">Assigned to me</label>
+        </div>
+      </div>
+      <% } %>
+      <div class="col-md-3">
+        <a href="/tickets?view=<%= view %>" class="btn btn-sm btn-outline-secondary">Clear Filters</a>
+      </div>
+    </form>
+  </div>
+
+  <%# Phones: one card per ticket (the wide table is for larger screens) %>
+  <div class="d-md-none">
+    <% if (tickets.length === 0) { %>
+      <div class="card p-4 text-center text-muted">No <%= view === 'done' ? 'completed' : 'active' %> tickets found.</div>
+    <% } %>
+    <% tickets.forEach(t => {
+         const cardClass = t.isFinished ? '' : (t.slaStatus === 'red' ? 'osa-ticket-card-red' : t.slaStatus === 'yellow' ? 'osa-ticket-card-yellow' : '');
+    %>
+      <div class="card osa-ticket-card <%= cardClass %> mb-2" style="border-left: 4px solid <%= (priorityMeta[t.priority] || {}).color || '#6c757d' %>;" onclick="location.href='/tickets/<%= t.id %>'">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="text-muted small"><%= t.ticket_number %></span>
+          <%- include('../partials/priority-badge', { name: t.priority }) %>
+        </div>
+        <div class="fw-semibold mb-1"><%= t.subject %> <% if (t.has_photos) { %><i class="bi bi-paperclip text-muted"></i><% } %></div>
+        <div class="small text-muted mb-2">
+          <%= t.request_type_name || '—' %>
+          <% if (t.department_name) { %> · <i class="bi bi-diagram-3"></i> <%= t.department_name %><% } %>
+          <% if (t.room_number) { %> · <i class="bi bi-door-open"></i> <%= t.room_number %><% } %>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2" onclick="event.stopPropagation()">
+          <% if (canChangeStatus) { %>
+            <form method="POST" action="/tickets/<%= t.id %>/update" class="d-inline-flex align-items-center gap-1 osa-status-mini">
+              <input type="hidden" name="return_to" value="<%= currentUrl %>">
+              <i class="bi <%= statusMeta[t.status].icon %>" style="color: <%= statusMeta[t.status].color %>;"></i>
+              <select name="status" class="form-select form-select-sm" style="--tile-color:<%= statusMeta[t.status].color %>;" onchange="this.form.submit()">
+                <% allStatuses.forEach(s => { %>
+                  <option value="<%= s %>" <%= t.status === s ? 'selected' : '' %>><%= s %></option>
+                <% }) %>
+              </select>
+            </form>
+          <% } else { %>
+            <span class="badge status-badge-<%= t.status.replace(' ','-') %>"><%= t.status %></span>
+          <% } %>
+          <% if (t.isOverdue && !t.isFinished) { %>
+            <span class="badge text-bg-danger"><i class="bi bi-exclamation-triangle-fill"></i> Overdue</span>
+          <% } else if (t.slaStatus === 'yellow' && !t.isFinished) { %>
+            <span class="badge text-bg-warning text-dark"><i class="bi bi-clock-history"></i> Near due</span>
+          <% } %>
+        </div>
+        <div class="small text-muted mt-2 d-flex justify-content-between gap-2">
+          <span><i class="bi bi-person-badge"></i> <%= t.assigned_to_name || 'Unassigned' %></span>
+          <span><%= t.created_at %></span>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+
+  <div class="card d-none d-md-block">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 osa-ticket-table">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Subject</th>
+            <th>Type</th>
+            <th>Requested Dept.</th>
+            <th>Room</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Assigned To</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (tickets.length === 0) { %>
+            <tr><td colspan="9" class="text-center text-muted py-4">No <%= view === 'done' ? 'completed' : 'active' %> tickets found.</td></tr>
+          <% } %>
+          <% tickets.forEach(t => {
+               const rowClass = t.isFinished ? '' : (t.slaStatus === 'red' ? 'table-danger' : t.slaStatus === 'yellow' ? 'table-warning' : '');
+          %>
+            <tr class="<%= rowClass %>" style="cursor:pointer; border-left: 4px solid <%= (priorityMeta[t.priority] || {}).color || '#6c757d' %>;" onclick="location.href='/tickets/<%= t.id %>'">
+              <td class="text-muted text-nowrap"><%= t.ticket_number %></td>
+              <td><%= t.subject %> <% if (t.has_photos) { %><i class="bi bi-paperclip text-muted" title="Has photo attachment"></i><% } %></td>
+              <td><%= t.request_type_name || '—' %></td>
+              <td><%= t.department_name || '—' %></td>
+              <td><%= t.room_number || '—' %></td>
+              <td><%- include('../partials/priority-badge', { name: t.priority }) %></td>
+              <td onclick="event.stopPropagation()" class="text-nowrap">
+                <div class="d-flex align-items-center gap-2 flex-nowrap">
+                <% if (canChangeStatus) { %>
+                  <form method="POST" action="/tickets/<%= t.id %>/update" class="d-inline-flex align-items-center gap-1 osa-status-mini">
+                    <input type="hidden" name="return_to" value="<%= currentUrl %>">
+                    <i class="bi <%= statusMeta[t.status].icon %>" style="color: <%= statusMeta[t.status].color %>;"></i>
+                    <select name="status" class="form-select form-select-sm" style="--tile-color:<%= statusMeta[t.status].color %>;" onchange="this.form.submit()" onclick="event.stopPropagation()">
+                      <% allStatuses.forEach(s => { %>
+                        <option value="<%= s %>" <%= t.status === s ? 'selected' : '' %>><%= s %></option>
+                      <% }) %>
+                    </select>
+                  </form>
+                <% } else { %>
+                  <span class="badge status-badge-<%= t.status.replace(' ','-') %>"><%= t.status %></span>
+                <% } %>
+                <% if (t.isOverdue && !t.isFinished) { %>
+                  <span class="badge text-bg-danger text-nowrap"><i class="bi bi-exclamation-triangle-fill"></i> Overdue</span>
+                <% } else if (t.slaStatus === 'yellow' && !t.isFinished) { %>
+                  <span class="badge text-bg-warning text-dark"><i class="bi bi-clock-history"></i> Near due</span>
+                <% } %>
+                </div>
+              </td>
+              <td><%= t.assigned_to_name || '—' %></td>
+              <td class="text-muted small"><%= t.created_at %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<%- include('../partials/foot') %>

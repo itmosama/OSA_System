@@ -1,0 +1,27 @@
+<%# Permission checkboxes, one card per area. Expects: sections, permissions, group (or null), prefix %>
+<div class="row g-3">
+  <% sections.forEach(sec => {
+       const items = permissions.filter(p => p.section === sec.key); %>
+    <div class="col-md-6">
+      <div class="perm-section h-100" style="--sec-color:<%= sec.color %>;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="perm-section-title"><i class="bi <%= sec.icon %>"></i> <%= sec.title %></div>
+          <div class="small">
+            <a href="#" class="perm-all text-decoration-none" data-on="1">All</a>
+            <span class="text-muted">/</span>
+            <a href="#" class="perm-all text-decoration-none" data-on="0">None</a>
+          </div>
+        </div>
+        <% items.forEach(p => { const id = prefix + '-' + p.key; %>
+          <div class="form-check mb-2">
+            <input type="checkbox" name="<%= p.key %>" value="1" class="form-check-input perm-box" id="<%= id %>" <%= group && group[p.key] ? 'checked' : '' %>>
+            <label class="form-check-label" for="<%= id %>">
+              <span class="fw-semibold"><%= p.label %></span><br>
+              <span class="text-muted small"><%= p.description %></span>
+            </label>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  <% }) %>
+</div>

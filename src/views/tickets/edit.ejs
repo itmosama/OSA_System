@@ -1,0 +1,96 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <a href="/tickets/<%= ticket.id %>" class="small text-decoration-none">&larr; Back to Ticket</a>
+  <h4 class="mt-2 mb-3"><i class="bi bi-pencil-square"></i> Edit <%= ticket.ticket_number %></h4>
+
+  <div class="card p-4 mx-auto" style="max-width: 720px;">
+    <% if (error) { %>
+      <div class="alert alert-danger py-2"><%= error %></div>
+    <% } %>
+    <form method="POST" action="/tickets/<%= ticket.id %>/edit">
+      <div class="mb-3">
+        <label class="form-label">Subject <span class="text-danger">*</span></label>
+        <input type="text" name="subject" class="form-control" value="<%= ticket.subject %>" required>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Request Type <span class="text-danger">*</span></label>
+          <select name="request_type_id" class="form-select" required>
+            <option value="" disabled <%= !ticket.request_type_id ? 'selected' : '' %>>— Select —</option>
+            <% requestTypes.forEach(rt => { %>
+              <option value="<%= rt.id %>" <%= String(ticket.request_type_id) === String(rt.id) ? 'selected' : '' %>><%= rt.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Priority</label>
+          <select name="priority" class="form-select">
+            <% priorities.forEach(p => { %>
+              <option value="<%= p.priority %>" <%= ticket.priority === p.priority ? 'selected' : '' %>><%= p.emoji %> <%= p.priority %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Department <span class="text-danger">*</span> <span class="text-muted small">(asked to do the job)</span></label>
+          <select name="department_id" class="form-select" required>
+            <option value="" disabled <%= !ticket.department_id ? 'selected' : '' %>>— Select —</option>
+            <% departments.forEach(d => { %>
+              <option value="<%= d.id %>" <%= String(ticket.department_id) === String(d.id) ? 'selected' : '' %>><%= d.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Room Number <span class="text-muted small">(if applicable)</span></label>
+          <input type="text" name="room_number" class="form-control" list="roomsDatalist"
+                 autocomplete="off" value="<%= ticket.room_number || '' %>">
+          <datalist id="roomsDatalist">
+            <% rooms.forEach(r => { %>
+              <option value="<%= r.number %>">
+            <% }) %>
+          </datalist>
+          <div class="form-text">Must match a room already in the system.</div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Room Status <span class="text-muted small">(if applicable)</span></label>
+        <select name="room_occupancy" class="form-select">
+          <option value="" <%= !ticket.room_occupancy ? 'selected' : '' %>>— Not set —</option>
+          <option value="Vacant" <%= ticket.room_occupancy === 'Vacant' ? 'selected' : '' %>>🟢 Vacant</option>
+          <option value="Occupied - Guest In" <%= ticket.room_occupancy === 'Occupied - Guest In' ? 'selected' : '' %>>🟠 Occupied — Guest In</option>
+          <option value="Occupied - Guest Out" <%= ticket.room_occupancy === 'Occupied - Guest Out' ? 'selected' : '' %>>⚪ Occupied — Guest Out</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Staff Name <span class="text-muted small">(optional)</span></label>
+        <select name="reported_by_name" class="form-select">
+          <option value="">— Not set —</option>
+          <% const known = reporterGroups.some(g => g.members.includes(ticket.reported_by_name)); %>
+          <% if (ticket.reported_by_name && !known) { %><option value="<%= ticket.reported_by_name %>" selected><%= ticket.reported_by_name %> (not in staff list)</option><% } %>
+          <% reporterGroups.forEach(g => { %>
+            <optgroup label="<%= g.name %>">
+              <% g.members.forEach(m => { %><option value="<%= m %>" <%= ticket.reported_by_name === m ? 'selected' : '' %>><%= m %></option><% }) %>
+            </optgroup>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="5"><%= ticket.description %></textarea>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle"></i> Save Changes</button>
+        <a href="/tickets/<%= ticket.id %>" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+<%- include('../partials/foot') %>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>License Generator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body style="background:#f5f6f8;">
+  <div class="container py-4" style="max-width: 900px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">License Generator <span class="badge text-bg-dark">Vendor Only</span></h5>
+      <form method="POST" action="/logout"><button class="btn btn-sm btn-outline-secondary" type="submit">Sign Out</button></form>
+    </div>
+
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item"><a class="nav-link active" href="/"><i class="bi bi-key"></i> Generate</a></li>
+      <li class="nav-item"><a class="nav-link" href="/reports"><i class="bi bi-list-ul"></i> Reports</a></li>
+    </ul>
+
+    <% if (error) { %><div class="alert alert-danger py-2"><%= error %></div><% } %>
+
+    <div class="card p-4 mb-3">
+      <form method="POST" action="/">
+        <div class="mb-3">
+          <label class="form-label">Site / Client Name <span class="text-danger">*</span></label>
+          <input type="text" name="site" class="form-control" placeholder="e.g. Grand Hotel" value="<%= values.site %>" required>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">License ID <span class="text-danger">*</span></label>
+            <input type="text" name="license_id" class="form-control" placeholder="e.g. GH-CONTRACT-001" value="<%= values.license_id %>" required>
+            <div class="form-text">Type your own reference — must be unique across all licenses.</div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Expiry Date <span class="text-danger">*</span></label>
+            <input type="date" name="expires" class="form-control" value="<%= values.expires %>" required>
+          </div>
+        </div>
+        <div class="form-text mb-3">A Serial Number (SN) is generated automatically as <code>OSA-&lt;code&gt;-&lt;YYMM&gt;-####</code>, e.g. <code>OSA-GH-2609-0001</code>.</div>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-key"></i> Generate License</button>
+      </form>
+    </div>
+
+    <% if (result) { %>
+      <div class="card p-4 mb-3 border-success">
+        <h6 class="text-success">License Generated</h6>
+        <div class="mb-2 small">
+          <div><span class="text-muted">Site:</span> <%= result.payload.site %></div>
+          <div><span class="text-muted">License ID:</span> <%= result.payload.id %></div>
+          <div><span class="text-muted">Serial Number:</span> <%= result.payload.sn %></div>
+          <div><span class="text-muted">Issued:</span> <%= result.payload.issued %></div>
+          <div><span class="text-muted">Expires:</span> <%= result.payload.expires %></div>
+        </div>
+        <label class="form-label small text-muted">License string — copy and send this to the client</label>
+        <textarea class="form-control mb-2" rows="4" readonly onclick="this.select()"><%= result.licenseString %></textarea>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="navigator.clipboard.writeText(document.querySelector('textarea').value); this.textContent='Copied!';">
+            <i class="bi bi-clipboard"></i> Copy to Clipboard
+          </button>
+          <a href="/download/<%= result.recordId %>" class="btn btn-sm btn-primary">
+            <i class="bi bi-download"></i> Download Encrypted File (.lic)
+          </a>
+        </div>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <div class="p-3 border-bottom">
+        <h6 class="mb-0">Licenses Issued (<%= licenses.length %>)</h6>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Hotel / Site</th>
+              <th>License ID</th>
+              <th>SN</th>
+              <th>Created</th>
+              <th>Expires</th>
+              <th>Days Left</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (licenses.length === 0) { %>
+              <tr><td colspan="8" class="text-center text-muted py-4">No licenses generated yet.</td></tr>
+            <% } %>
+            <% licenses.forEach((l, i) => { %>
+              <tr>
+                <td><%= l.site %></td>
+                <td class="text-muted"><%= l.id || '—' %></td>
+                <td class="text-muted small"><%= l.sn || '—' %></td>
+                <td class="text-muted small"><%= l.issued %></td>
+                <td class="text-muted small"><%= l.expires %></td>
+                <td>
+                  <% if (l.expired) { %>
+                    <span class="text-danger"><%= Math.abs(l.daysRemaining) %> day<%= Math.abs(l.daysRemaining) === 1 ? '' : 's' %> ago</span>
+                  <% } else { %>
+                    <%= l.daysRemaining %> day<%= l.daysRemaining === 1 ? '' : 's' %>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (l.expired) { %>
+                    <span class="badge text-bg-danger">Expired</span>
+                  <% } else if (l.daysRemaining <= 30) { %>
+                    <span class="badge text-bg-warning text-dark">Expiring Soon</span>
+                  <% } else { %>
+                    <span class="badge text-bg-success">Active</span>
+                  <% } %>
+                </td>
+                <td class="text-nowrap">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('lic-<%= i %>').classList.toggle('d-none')" title="View string">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <a href="/download/<%= l.recordId %>" class="btn btn-sm btn-outline-primary" title="Download .lic file">
+                    <i class="bi bi-download"></i>
+                  </a>
+                </td>
+              </tr>
+              <tr id="lic-<%= i %>" class="d-none">
+                <td colspan="8">
+                  <textarea class="form-control form-control-sm" rows="3" readonly onclick="this.select()"><%= l.licenseString %></textarea>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

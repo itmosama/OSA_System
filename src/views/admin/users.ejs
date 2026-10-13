@@ -1,0 +1,164 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container-fluid">
+  <div class="admin-shell">
+    <%- include('_sidebar') %>
+    <main class="admin-main">
+      <h4 class="mb-3"><i class="bi bi-people"></i> Users</h4>
+
+  <div class="row">
+    <div class="col-md-5">
+      <div class="card p-4 mb-3">
+        <h6 class="text-muted">Add User</h6>
+        <% if (error) { %><div class="alert alert-danger py-2"><%= error %></div><% } %>
+        <form method="POST" action="/admin/users">
+          <div class="mb-2">
+            <label class="form-label small">Full Name</label>
+            <input type="text" name="full_name" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Username</label>
+            <input type="text" name="username" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Email (optional)</label>
+            <input type="email" name="email" class="form-control">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Temporary Password</label>
+            <input type="text" name="password" class="form-control" required minlength="6">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Role</label>
+            <select name="role" class="form-select" required>
+              <option value="requester">Requester (department staff)</option>
+              <option value="agent">IT Agent (technician)</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Department</label>
+            <select name="department_id" class="form-select">
+              <option value="">— None —</option>
+              <% departments.forEach(d => { %>
+                <option value="<%= d.id %>"><%= d.name %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small">Permission Group <span class="text-muted">(optional)</span></label>
+            <select name="group_id" class="form-select">
+              <option value="">— None —</option>
+              <% groups.forEach(g => { %>
+                <option value="<%= g.id %>"><%= g.name %></option>
+              <% }) %>
+            </select>
+            <div class="form-text">Grants extra abilities beyond the role above. Manage groups under Admin → Permission Groups.</div>
+          </div>
+          <button class="btn btn-primary w-100" type="submit"><i class="bi bi-person-plus"></i> Create User</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-md-7">
+      <div class="card">
+        <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+          <thead class="table-light">
+            <tr><th>Name</th><th>Username</th><th>Role</th><th>Department</th><th>Group</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% users.forEach(u => { %>
+              <tr>
+                <td><%= u.full_name %></td>
+                <td><%= u.username %></td>
+                <td><span class="badge text-bg-secondary text-uppercase"><%= u.role %></span></td>
+                <td><%= u.department_name || '—' %></td>
+                <td><%= u.group_name || '—' %></td>
+                <td>
+                  <% if (u.active) { %>
+                    <span class="badge text-bg-success">Active</span>
+                  <% } else { %>
+                    <span class="badge text-bg-secondary">Disabled</span>
+                  <% } %>
+                </td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#edit-<%= u.id %>" title="Edit">
+                      <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#pw-<%= u.id %>" title="Reset password">
+                      <i class="bi bi-key"></i>
+                    </button>
+                    <form method="POST" action="/admin/users/<%= u.id %>/toggle-active">
+                      <button class="btn btn-outline-warning" type="submit">
+                        <i class="bi bi-<%= u.active ? 'pause' : 'play' %>"></i>
+                      </button>
+                    </form>
+                    <% if (u.id !== currentUser.id) { %>
+                    <form method="POST" action="/admin/users/<%= u.id %>/delete">
+                      <button class="btn btn-outline-danger js-delete-btn" type="button" data-label="user &quot;<%= u.full_name %>&quot;"><i class="bi bi-trash"></i></button>
+                    </form>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+              <tr class="collapse" id="edit-<%= u.id %>">
+                <td colspan="7" class="bg-light">
+                  <form method="POST" action="/admin/users/<%= u.id %>/edit" class="row g-2 align-items-center py-2">
+                    <div class="col-md-2">
+                      <input type="text" name="full_name" class="form-control form-control-sm" value="<%= u.full_name %>" required>
+                    </div>
+                    <div class="col-md-2">
+                      <input type="email" name="email" class="form-control form-control-sm" placeholder="Email" value="<%= u.email || '' %>">
+                    </div>
+                    <div class="col-md-2">
+                      <select name="role" class="form-select form-select-sm">
+                        <option value="requester" <%= u.role === 'requester' ? 'selected' : '' %>>Requester</option>
+                        <option value="agent" <%= u.role === 'agent' ? 'selected' : '' %>>IT Agent</option>
+                        <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>Admin</option>
+                      </select>
+                    </div>
+                    <div class="col-md-2">
+                      <select name="department_id" class="form-select form-select-sm">
+                        <option value="">— None —</option>
+                        <% departments.forEach(d => { %>
+                          <option value="<%= d.id %>" <%= u.department_id === d.id ? 'selected' : '' %>><%= d.name %></option>
+                        <% }) %>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <select name="group_id" class="form-select form-select-sm">
+                        <option value="">— No group —</option>
+                        <% groups.forEach(g => { %>
+                          <option value="<%= g.id %>" <%= u.group_id === g.id ? 'selected' : '' %>><%= g.name %></option>
+                        <% }) %>
+                      </select>
+                    </div>
+                    <div class="col-md-1">
+                      <button class="btn btn-sm btn-primary w-100" type="submit">Save</button>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+              <tr class="collapse" id="pw-<%= u.id %>">
+                <td colspan="7" class="bg-light">
+                  <form method="POST" action="/admin/users/<%= u.id %>/reset-password" class="d-flex gap-2 align-items-center py-2">
+                    <span class="small text-muted">Reset password:</span>
+                    <input type="text" name="password" class="form-control form-control-sm" style="max-width:220px" placeholder="New password" minlength="6" required>
+                    <button class="btn btn-sm btn-primary" type="submit">Set</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+  </div>
+    </main>
+  </div>
+</div>
+<script src="/js/admin-sidebar.js"></script>
+<%- include('../partials/foot') %>

@@ -1,0 +1,53 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container-fluid">
+  <div class="admin-shell">
+    <%- include('_sidebar') %>
+    <main class="admin-main">
+      <h4 class="mb-3"><i class="bi bi-diagram-3"></i> Departments</h4>
+
+      <div class="mx-auto" style="max-width: 760px;">
+        <div>
+          <div class="card p-4 mb-3">
+            <h6 class="text-muted">Add Department</h6>
+            <% if (error) { %><div class="alert alert-danger py-2"><%= error %></div><% } %>
+            <form method="POST" action="/admin/departments" class="d-flex gap-2">
+              <input type="text" name="name" class="form-control" placeholder="Department name" required>
+              <button class="btn btn-primary" type="submit"><i class="bi bi-plus"></i></button>
+            </form>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="table-responsive">
+              <table class="table mb-0 align-middle">
+                <thead class="table-light"><tr><th>Name</th><th>Users</th><th>Tickets</th><th></th></tr></thead>
+                <tbody>
+                  <% departments.forEach(d => { %>
+                    <tr>
+                      <td>
+                        <form method="POST" action="/admin/departments/<%= d.id %>/edit" class="d-flex gap-1">
+                          <input type="text" name="name" class="form-control form-control-sm" value="<%= d.name %>" required>
+                          <button class="btn btn-sm btn-outline-primary" type="submit" title="Save"><i class="bi bi-check-lg"></i></button>
+                        </form>
+                      </td>
+                      <td><%= d.user_count %></td>
+                      <td><%= d.ticket_count %></td>
+                      <td class="text-end">
+                        <form method="POST" action="/admin/departments/<%= d.id %>/delete">
+                          <button class="btn btn-sm btn-outline-danger js-delete-btn" type="button" data-label="department &quot;<%= d.name %>&quot;"><i class="bi bi-trash"></i></button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/admin-sidebar.js"></script>
+<%- include('../partials/foot') %>

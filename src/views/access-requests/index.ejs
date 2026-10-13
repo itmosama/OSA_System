@@ -1,0 +1,118 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <%
+    const statusMeta = {
+      'Draft':                          { icon: 'bi-file-earmark',        color: '#6c757d' },
+      'Submitted':                      { icon: 'bi-send',                color: '#0d6efd' },
+      'Pending HOD':                    { icon: 'bi-person-check',        color: '#fd7e14' },
+      'Pending HR':                     { icon: 'bi-person-check',        color: '#fd7e14' },
+      'Pending IT Manager':             { icon: 'bi-person-check',        color: '#fd7e14' },
+      'Pending GM':                     { icon: 'bi-person-check',        color: '#dc3545' },
+      'Approved':                       { icon: 'bi-check-circle',        color: '#198754' },
+      'In Progress':                    { icon: 'bi-arrow-repeat',        color: '#0dcaf0' },
+      'Awaiting User Acknowledgment':   { icon: 'bi-hourglass-split',     color: '#6f42c1' },
+      'Closed':                         { icon: 'bi-check-circle-fill',   color: '#343a40' },
+      'Rejected':                       { icon: 'bi-x-circle-fill',       color: '#dc3545' },
+      'Cancelled':                      { icon: 'bi-slash-circle',        color: '#6c757d' },
+    };
+    const qs = (extra) => {
+      const params = new URLSearchParams();
+      if (filters.department_id) params.set('department_id', filters.department_id);
+      if (filters.start_date) params.set('start_date', filters.start_date);
+      Object.keys(extra).forEach(k => { if (extra[k]) params.set(k, extra[k]); });
+      const s = params.toString();
+      return '/access-requests' + (s ? '?' + s : '');
+    };
+  %>
+
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0"><i class="bi bi-person-badge"></i> IT Access Requests</h4>
+    <% if (currentUser.role === 'admin' || perms.can_submit_access_requests) { %>
+      <a href="/access-requests/new" class="btn btn-primary"><i class="bi bi-plus-circle"></i> New Request</a>
+    <% } %>
+  </div>
+
+  <div class="row g-2 mb-3">
+    <% allStatuses.forEach(s => { const meta = statusMeta[s]; const count = statusCounts[s] || 0; %>
+      <div class="col-6 col-md-3 col-lg-2">
+        <a href="<%= qs({ status: s }) %>" class="status-tile <%= filters.status === s ? 'active' : '' %>" style="--tile-color:<%= meta.color %>;">
+          <div class="card h-100">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi <%= meta.icon %> status-tile-icon"></i>
+              <div>
+                <div class="text-muted status-tile-label"><%= s %></div>
+                <div class="fw-bold status-tile-count"><%= count %></div>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    <% }) %>
+  </div>
+
+  <div class="card p-3 mb-3">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Status</label>
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All</option>
+          <% allStatuses.forEach(s => { %>
+            <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Department</label>
+        <select name="department_id" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All</option>
+          <% departments.forEach(d => { %>
+            <option value="<%= d.id %>" <%= String(filters.department_id) === String(d.id) ? 'selected' : '' %>><%= d.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Start Date</label>
+        <input type="date" name="start_date" class="form-control form-control-sm" value="<%= filters.start_date %>" onchange="this.form.submit()">
+      </div>
+      <div class="col-md-3">
+        <a href="/access-requests" class="btn btn-sm btn-outline-secondary">Clear Filters</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Reference</th>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Start Date</th>
+            <th>Status</th>
+            <th>Submitted By</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (requests.length === 0) { %>
+            <tr><td colspan="7" class="text-center text-muted py-4">No access requests found.</td></tr>
+          <% } %>
+          <% requests.forEach(r => { const meta = statusMeta[r.status]; %>
+            <tr style="cursor:pointer" onclick="location.href='/access-requests/<%= r.id %>'">
+              <td class="text-muted"><%= r.reference_number %></td>
+              <td><%= r.employee_full_name %></td>
+              <td><%= r.department_name || '—' %></td>
+              <td><%= r.start_date %></td>
+              <td><span class="badge" style="background-color:<%= meta.color %>;"><i class="bi <%= meta.icon %>"></i> <%= r.status %></span></td>
+              <td><%= r.created_by_name || '—' %></td>
+              <td class="text-muted small"><%= r.created_at %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

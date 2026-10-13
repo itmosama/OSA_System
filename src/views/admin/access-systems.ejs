@@ -1,0 +1,81 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container-fluid">
+  <div class="admin-shell">
+    <%- include('_sidebar') %>
+    <main class="admin-main">
+      <h4 class="mb-3"><i class="bi bi-key"></i> Access Systems List</h4>
+      <p class="text-muted small" style="max-width:680px;">
+        Systems available on the New Joiner IT Access Request form. Enter access levels as a
+        comma-separated list, e.g. <code>Front Desk, Reservations, Cashier, Supervisor*</code> —
+        add a trailing <strong>*</strong> to a level to flag it as admin-level, which automatically
+        requires General Manager approval on any request that selects it. Checking
+        "Always needs GM approval" does the same regardless of level (used for VPN and Finance).
+      </p>
+
+      <div class="card p-4 mb-3">
+        <h6 class="text-muted">Add System</h6>
+        <% if (error) { %><div class="alert alert-danger py-2"><%= error %></div><% } %>
+        <form method="POST" action="/admin/access-systems" class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label small mb-1">Name</label>
+            <input type="text" name="name" class="form-control form-control-sm" required>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small mb-1">Category</label>
+            <input type="text" name="category" class="form-control form-control-sm" placeholder="e.g. Core IT">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small mb-1">Access levels (comma-separated, * = admin-level)</label>
+            <input type="text" name="levels" class="form-control form-control-sm" placeholder="e.g. Read, Read-Write">
+          </div>
+          <div class="col-md-2">
+            <div class="form-check">
+              <input type="checkbox" name="gm_always" value="1" class="form-check-input" id="new-gm-always">
+              <label class="form-check-label small" for="new-gm-always">Always needs GM approval</label>
+            </div>
+          </div>
+          <div class="col-md-1">
+            <button class="btn btn-primary btn-sm w-100" type="submit"><i class="bi bi-plus"></i></button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table mb-0 align-middle">
+            <thead class="table-light">
+              <tr><th>Name</th><th>Category</th><th>Levels</th><th>Always GM</th><th>Active</th><th></th></tr>
+            </thead>
+            <tbody>
+              <% systems.forEach(s => { const fid = 'edit-sys-' + s.id; %>
+                <form id="<%= fid %>" method="POST" action="/admin/access-systems/<%= s.id %>/edit"></form>
+                <tr>
+                  <td><input form="<%= fid %>" type="text" name="name" class="form-control form-control-sm" value="<%= s.name %>" required></td>
+                  <td><input form="<%= fid %>" type="text" name="category" class="form-control form-control-sm" value="<%= s.category || '' %>"></td>
+                  <td>
+                    <input form="<%= fid %>" type="text" name="levels" class="form-control form-control-sm"
+                      value="<%= s.levels.map(l => l.name + (l.is_admin_level ? '*' : '')).join(', ') %>">
+                  </td>
+                  <td class="text-center"><input form="<%= fid %>" type="checkbox" name="gm_always" value="1" class="form-check-input" <%= s.gm_always ? 'checked' : '' %>></td>
+                  <td class="text-center"><input form="<%= fid %>" type="checkbox" name="active" value="1" class="form-check-input" <%= s.active ? 'checked' : '' %>></td>
+                  <td class="text-end">
+                    <button form="<%= fid %>" class="btn btn-sm btn-outline-primary" type="submit" title="Save"><i class="bi bi-check-lg"></i></button>
+                    <form method="POST" action="/admin/access-systems/<%= s.id %>/delete" class="d-inline">
+                      <button class="btn btn-sm btn-outline-danger js-delete-btn" type="button" data-label="access system &quot;<%= s.name %>&quot;"><i class="bi bi-trash"></i></button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+              <% if (systems.length === 0) { %>
+                <tr><td colspan="6" class="text-center text-muted py-4">No access systems yet — add one above.</td></tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/admin-sidebar.js"></script>
+<%- include('../partials/foot') %>

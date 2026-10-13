@@ -1,0 +1,78 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0"><i class="bi bi-tools"></i> <%= task.task_number %></h4>
+      <div class="text-muted small"><%= task.equipment_area %></div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <% if (task.isOverdue) { %><span class="badge text-bg-danger"><i class="bi bi-exclamation-triangle-fill"></i> Overdue</span><% } %>
+      <% if (task.isDueSoon) { %><span class="badge text-bg-warning text-dark">Due soon</span><% } %>
+      <span class="badge <%= task.status === 'Completed' ? 'text-bg-success' : 'text-bg-secondary' %>"><%= task.status %></span>
+      <% if (perms.can_edit_maintenance) { %>
+        <a href="/maintenance/<%= task.id %>/edit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+      <% } %>
+      <% if (perms.can_delete_maintenance) { %>
+        <form method="POST" action="/maintenance/<%= task.id %>/delete" class="d-inline">
+          <button type="button" class="btn btn-sm btn-outline-danger js-delete-btn" data-label="maintenance task &quot;<%= task.task_number %>&quot;"><i class="bi bi-trash"></i></button>
+        </form>
+      <% } %>
+      <a href="/maintenance" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card p-3 mb-3">
+        <div class="row small">
+          <div class="col-6 mb-2"><span class="text-muted">Task:</span> <%= task.task_description %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Frequency:</span> <%= task.frequency %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Department:</span> <%= task.department_name || '—' %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Assigned To:</span> <%= task.assigned_to_name || '—' %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Next Due:</span> <%= task.next_due_date %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Last Completed:</span> <%= task.last_completed_date || '—' %></div>
+          <% if (task.notes) { %>
+            <div class="col-12 mb-2"><span class="text-muted">Notes:</span> <%= task.notes %></div>
+          <% } %>
+          <div class="col-6 mb-2"><span class="text-muted">Created By:</span> <%= task.created_by_name || '—' %></div>
+        </div>
+      </div>
+
+      <% if (currentUser.role === 'admin' || perms.can_manage_maintenance) { %>
+        <div class="card p-3 mb-3">
+          <h6 class="text-muted">Mark Complete</h6>
+          <p class="text-muted small mb-2">Completing this task automatically schedules the next occurrence (<%= task.frequency %> from today).</p>
+          <form method="POST" action="/maintenance/<%= task.id %>/complete" class="d-flex gap-2">
+            <input type="text" name="note" class="form-control form-control-sm" placeholder="Optional completion note">
+            <button type="submit" class="btn btn-success btn-sm text-nowrap"><i class="bi bi-check2-all"></i> Mark Complete</button>
+          </form>
+        </div>
+      <% } %>
+
+      <div class="card p-3">
+        <h6 class="text-muted">Notes &amp; History</h6>
+        <ul class="list-unstyled small mb-3">
+          <% comments.forEach(c => { %>
+            <li class="mb-2 pb-2 border-bottom">
+              <% if (c.is_system) { %>
+                <div class="text-muted fst-italic"><i class="bi bi-gear"></i> <%= c.body %></div>
+              <% } else { %>
+                <div><%= c.body %></div>
+              <% } %>
+              <div class="text-muted"><%= c.author_name %> — <%= c.created_at %></div>
+            </li>
+          <% }) %>
+          <% if (comments.length === 0) { %>
+            <li class="text-muted">No history yet.</li>
+          <% } %>
+        </ul>
+        <form method="POST" action="/maintenance/<%= task.id %>/comments" class="d-flex gap-2">
+          <input type="text" name="body" class="form-control form-control-sm" placeholder="Add a note...">
+          <button type="submit" class="btn btn-outline-primary btn-sm text-nowrap"><i class="bi bi-send"></i></button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

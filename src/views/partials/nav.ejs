@@ -1,0 +1,297 @@
+<% if (currentUser) { %>
+<nav class="navbar navbar-dark bg-dark mb-3 osa-navbar d-flex align-items-center flex-nowrap">
+  <a class="navbar-brand d-flex align-items-center flex-shrink-0 mb-0 ps-3 text-nowrap" href="/home" title="Operations Service Assistance — Behind every smooth operation.">
+    <img src="/img/logo.webp" alt="OSA" class="osa-logo-img">
+  </a>
+  <div class="container d-flex align-items-center flex-nowrap" style="gap: 0.5rem;">
+    <ul class="navbar-nav flex-row flex-grow-1 overflow-auto" style="gap: 0.1rem;">
+      <li class="nav-item">
+        <a aria-label="Home" class="nav-link osa-nav-link <%= path === '/home' ? 'active' : '' %>" href="/home" data-label="Home">
+          <i class="bi bi-house-door"></i>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a aria-label="Tickets" class="nav-link osa-nav-link <%= path.startsWith('/tickets') ? 'active' : '' %>" href="/tickets" data-label="Tickets">
+          <i class="bi bi-ticket-perforated"></i><% if (tabCounts.tickets) { %><span class="osa-tab-badge"><%= tabCounts.tickets > 99 ? '99+' : tabCounts.tickets %></span><% } %>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a aria-label="Lost &amp; Found" class="nav-link osa-nav-link <%= path.startsWith('/lost-found') ? 'active' : '' %>" href="/lost-found" data-label="Lost &amp; Found">
+          <i class="bi bi-binoculars"></i><% if (tabCounts.lostfound) { %><span class="osa-tab-badge"><%= tabCounts.lostfound > 99 ? '99+' : tabCounts.lostfound %></span><% } %>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a aria-label="Maintenance" class="nav-link osa-nav-link <%= path.startsWith('/maintenance') ? 'active' : '' %>" href="/maintenance" data-label="Maintenance">
+          <i class="bi bi-tools"></i><% if (tabCounts.maintenance) { %><span class="osa-tab-badge"><%= tabCounts.maintenance > 99 ? '99+' : tabCounts.maintenance %></span><% } %>
+        </a>
+      </li>
+      <% const canSeeAccessRequests = currentUser.role === 'admin' || perms.can_submit_access_requests || perms.can_approve_as_hod
+           || perms.can_approve_as_hr || perms.can_approve_as_it_manager || perms.can_approve_as_gm || perms.can_fulfil_access_requests; %>
+      <% if (canSeeAccessRequests) { %>
+      <li class="nav-item">
+        <a aria-label="Access Requests" class="nav-link osa-nav-link <%= path.startsWith('/access-requests') ? 'active' : '' %>" href="/access-requests" data-label="Access Requests">
+          <i class="bi bi-person-badge"></i><% if (tabCounts.access) { %><span class="osa-tab-badge"><%= tabCounts.access > 99 ? '99+' : tabCounts.access %></span><% } %>
+        </a>
+      </li>
+      <% } %>
+      <% if (canSeeWorkflow) { %>
+      <li class="nav-item">
+        <a aria-label="Workflow Requests" class="nav-link osa-nav-link <%= path.startsWith('/workflow-requests') ? 'active' : '' %>" href="/workflow-requests" data-label="Workflow Requests">
+          <i class="bi bi-signpost-split"></i><% if (tabCounts.workflow) { %><span class="osa-tab-badge"><%= tabCounts.workflow > 99 ? '99+' : tabCounts.workflow %></span><% } %>
+        </a>
+      </li>
+      <% } %>
+      <% if (canSeeAdmin) { %>
+      <li class="nav-item">
+        <a aria-label="Admin" class="nav-link osa-nav-link <%= path.startsWith('/admin') && !path.startsWith('/admin/reports') ? 'active' : '' %>" href="/admin" data-label="Admin">
+          <i class="bi bi-gear"></i>
+        </a>
+      </li>
+      <% } %>
+      <% if (currentUser.role === 'admin' || perms.can_view_reports) { %>
+      <li class="nav-item">
+        <a aria-label="Reports" class="nav-link osa-nav-link <%= path.startsWith('/admin/reports') ? 'active' : '' %>" href="/admin/reports" data-label="Reports">
+          <i class="bi bi-bar-chart-line"></i>
+        </a>
+      </li>
+      <% } %>
+    </ul>
+
+    <div class="osa-dock-right d-flex align-items-center flex-shrink-0">
+    <span class="position-relative d-none d-xl-inline-block flex-shrink-0 osa-dock-item" data-label="Calendar">
+      <span id="liveClock" class="navbar-text osa-clock"></span>
+      <input type="date" id="navDateInput" class="osa-clock-input" aria-label="Open calendar" title="Click to open calendar">
+    </span>
+
+    <div class="dropdown flex-shrink-0">
+      <button class="btn btn-outline-light btn-sm position-relative osa-dock-item" type="button" data-bs-toggle="dropdown" data-label="Notifications" aria-label="Notifications">
+        <i class="bi bi-bell"></i>
+        <% const bellTotal = pendingAccessRequests.length + workflowBell.length + ticketBell.unread + lostFoundBell.unread; %>
+        <% if (bellTotal > 0) { %>
+          <span class="badge rounded-pill text-bg-danger osa-notif-badge"><%= bellTotal %></span>
+        <% } %>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end osa-notif-dropdown">
+        <li class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+          <strong class="small">Pending Requests</strong>
+          <a href="/notifications" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Open all notifications in one page"><i class="bi bi-box-arrow-up-right"></i></a>
+        </li>
+        <% if (bellTotal === 0 && ticketBell.items.length === 0 && lostFoundBell.items.length === 0) { %>
+          <li class="px-3 py-3 text-muted small text-center">Nothing pending.</li>
+        <% } %>
+        <% if (ticketBell.items.length) { %>
+          <li class="px-3 pt-2 pb-1 d-flex justify-content-between align-items-center">
+            <span class="small fw-semibold text-muted"><i class="bi bi-ticket-perforated"></i> Tickets</span>
+            <% if (ticketBell.unread) { %>
+              <form method="POST" action="/tickets/notifications/read" class="m-0"><button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none">Mark all read</button></form>
+            <% } %>
+          </li>
+          <% ticketBell.items.forEach(n => { %>
+            <li>
+              <a class="dropdown-item py-2 <%= n.unread ? 'osa-notif-unread' : '' %>" href="/tickets/<%= n.ticketId %>">
+                <div class="small d-flex justify-content-between gap-2">
+                  <span class="fw-semibold text-truncate"><i class="bi <%= n.kind === 'new' ? 'bi-plus-circle text-success' : 'bi-chat-left-text text-primary' %>"></i> <%= n.ticketNumber %> — <%= n.subject %></span>
+                  <% if (n.unread) { %><span class="osa-notif-dot flex-shrink-0"></span><% } %>
+                </div>
+                <div class="text-muted small text-truncate"><%= n.kind === 'new' ? 'New ticket from ' + n.actor : n.actor + ': ' + n.text %></div>
+              </a>
+            </li>
+          <% }) %>
+          <% if (pendingAccessRequests.length || workflowBell.length || lostFoundBell.items.length) { %><li><hr class="dropdown-divider my-1"></li><% } %>
+        <% } %>
+        <% if (lostFoundBell.items.length) { %>
+          <li class="px-3 pt-2 pb-1"><span class="small fw-semibold text-muted"><i class="bi bi-binoculars"></i> Lost &amp; Found</span></li>
+          <% lostFoundBell.items.slice(0, 5).forEach(n => { %>
+            <li>
+              <a class="dropdown-item py-2 <%= n.unread ? 'osa-notif-unread' : '' %>" href="/lost-found/<%= n.itemId %>">
+                <div class="small d-flex justify-content-between gap-2">
+                  <span class="fw-semibold text-truncate"><i class="bi <%= n.kind === 'new' ? 'bi-plus-circle text-success' : 'bi-chat-left-text text-primary' %>"></i> <%= n.serial %> — <%= n.name %></span>
+                  <% if (n.unread) { %><span class="osa-notif-dot flex-shrink-0"></span><% } %>
+                </div>
+                <div class="text-muted small text-truncate"><%= n.kind === 'new' ? 'New item from ' + n.actor : n.actor + ': ' + n.text %></div>
+              </a>
+            </li>
+          <% }) %>
+          <% if (pendingAccessRequests.length || workflowBell.length) { %><li><hr class="dropdown-divider my-1"></li><% } %>
+        <% } %>
+        <% pendingAccessRequests.forEach(r => { %>
+          <li>
+            <a class="dropdown-item py-2" href="/access-requests/<%= r.id %>">
+              <div class="fw-semibold small"><i class="bi bi-person-badge"></i> <%= r.reference_number %> — <%= r.employee_full_name %></div>
+              <div class="text-muted small"><%= r.status %></div>
+            </a>
+          </li>
+        <% }) %>
+        <% workflowBell.forEach(r => { %>
+          <li>
+            <a class="dropdown-item py-2" href="/workflow-requests/<%= r.id %>">
+              <div class="fw-semibold small"><i class="bi bi-signpost-split"></i> <%= r.reference_number %> — <%= r.title %></div>
+              <div class="text-muted small"><%= r.status %></div>
+            </a>
+          </li>
+        <% }) %>
+        <li><hr class="dropdown-divider my-1"></li>
+        <li><a class="dropdown-item small text-center text-primary" href="/notifications">View all notifications</a></li>
+      </ul>
+    </div>
+
+    <div class="dropdown flex-shrink-0">
+      <button class="btn btn-outline-light btn-sm dropdown-toggle osa-dock-item" type="button" data-bs-toggle="dropdown" data-label="Account" aria-label="Account">
+        <i class="bi bi-person-circle"></i>
+        <span class="d-none d-lg-inline"><%= currentUser.full_name %></span>
+        <span class="badge text-bg-secondary text-uppercase ms-1 d-none d-md-inline"><%= currentUser.role %></span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li class="px-3 py-1 small text-muted d-xl-none" id="liveClockMobile" role="button" title="Click to open calendar"></li>
+        <li><a class="dropdown-item" href="/account/password"><i class="bi bi-key"></i> Change Password</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li class="px-3 pt-1 pb-1 small text-muted"><i class="bi bi-palette"></i> Top bar colour <span class="ms-1">(this browser only)</span></li>
+        <li class="px-3 pb-2">
+          <div class="d-flex align-items-center gap-2" id="navColorPick">
+            <button type="button" class="osa-swatch" data-color="#212529" style="background:#212529" title="Dark (default)" aria-label="Dark"></button>
+            <button type="button" class="osa-swatch" data-color="#f0f9ff" style="background:#f0f9ff" title="Pale blue" aria-label="Pale blue"></button>
+            <button type="button" class="osa-swatch" data-color="#ffffff" style="background:#ffffff" title="White" aria-label="White"></button>
+            <label class="osa-swatch osa-swatch-custom mb-0" title="Pick any colour"><i class="bi bi-eyedropper"></i><input type="color" id="navColorCustom" value="#f0f9ff"></label>
+            <button type="button" class="btn btn-link btn-sm p-0 ms-auto" id="navColorReset">Reset</button>
+          </div>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <button type="button" class="dropdown-item d-flex align-items-center justify-content-between gap-3" id="langToggle" aria-expanded="false" aria-controls="langList">
+            <span><i class="bi bi-translate"></i> Language</span><i class="bi bi-chevron-right small" id="langChevron"></i>
+          </button>
+          <div id="langList" class="osa-lang-list" hidden>
+            <button type="button" class="dropdown-item d-flex align-items-center justify-content-between gap-3 active" data-lang="en"><span>English</span><i class="bi bi-check2"></i></button>
+            <div class="px-3 py-1 small text-muted">More languages are coming soon.</div>
+          </div>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <form action="/logout" method="POST">
+            <button class="dropdown-item" type="submit"><i class="bi bi-box-arrow-right"></i> Sign Out</button>
+          </form>
+        </li>
+      </ul>
+    </div>
+    </div>
+    <input type="date" id="navDateInputMobile" class="visually-hidden" aria-hidden="true" tabindex="-1">
+  </div>
+</nav>
+<script>
+  // The language list stays closed until "Language" is clicked (and the account menu stays open while you do).
+  (function () {
+    var btn = document.getElementById('langToggle'), list = document.getElementById('langList'), chev = document.getElementById('langChevron');
+    if (!btn || !list) return;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = list.hidden;
+      list.hidden = !open;
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      chev.className = 'bi small ' + (open ? 'bi-chevron-down' : 'bi-chevron-right');
+    });
+  })();
+</script>
+<script>
+  // Try-out top bar colour: remembered in this browser only, applied straight away.
+  (function () {
+    var KEY = 'osaNavColor', nav = document.querySelector('.osa-navbar');
+    if (!nav) return;
+    function isLight(hex) {
+      var h = hex.replace('#', ''); if (h.length === 3) h = h.replace(/(.)/g, '$1$1');
+      var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+      return (0.299 * r + 0.587 * g + 0.114 * b) > 150;
+    }
+    function apply(color) {
+      if (!color) { document.documentElement.style.removeProperty('--osa-nav-bg'); nav.classList.remove('osa-nav-light'); document.documentElement.classList.remove('osa-nav-is-light'); return; }
+      document.documentElement.style.setProperty('--osa-nav-bg', color);
+      nav.classList.toggle('osa-nav-light', isLight(color));
+      document.documentElement.classList.toggle('osa-nav-is-light', isLight(color));
+    }
+    var saved = null;
+    try { saved = localStorage.getItem(KEY); } catch (e) {}
+    if (saved) apply(saved);
+    function choose(color) {
+      apply(color);
+      try { color ? localStorage.setItem(KEY, color) : localStorage.removeItem(KEY); } catch (e) {}
+    }
+    var box = document.getElementById('navColorPick');
+    if (!box) return;
+    box.addEventListener('click', function (e) {
+      e.stopPropagation(); // keep the account menu open while trying colours
+      var sw = e.target.closest('.osa-swatch[data-color]');
+      if (sw) choose(sw.getAttribute('data-color'));
+      if (e.target.closest('#navColorReset')) choose(null);
+    });
+    var custom = document.getElementById('navColorCustom');
+    if (custom) custom.addEventListener('input', function () { choose(custom.value); });
+  })();
+</script>
+<script>
+  // Auto sign-out after a period with no activity. Mouse, keyboard, touch and scroll count
+  // (in any open OSA tab); while active, the server is told every minute so a long form
+  // is not lost.
+  (function () {
+    var IDLE = <%= Number(locals.idleTimeoutMs) || 900000 %>;
+    var KEY = 'osaLastActivity', last = Date.now(), lastPing = 0;
+    function shared() { try { return Number(localStorage.getItem(KEY)) || 0; } catch (e) { return 0; } }
+    function touch() {
+      last = Date.now();
+      try { localStorage.setItem(KEY, String(last)); } catch (e) {}
+      if (last - lastPing > 60000) {
+        lastPing = last;
+        fetch('/session/ping', { method: 'POST', credentials: 'same-origin' }).then(function (r) {
+          if (r.status === 401 || r.redirected) window.location.href = '/login?timeout=1';
+        }).catch(function () {});
+      }
+    }
+    ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function (ev) {
+      window.addEventListener(ev, touch, { passive: true, capture: true });
+    });
+    try { localStorage.setItem(KEY, String(last)); } catch (e) {}
+    setInterval(function () {
+      var latest = Math.max(last, shared());
+      if (Date.now() - latest >= IDLE) window.location.href = '/login?timeout=1';
+    }, 15000);
+  })();
+</script>
+<div id="notifToastContainer" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1090;"></div>
+<script src="/js/notifications.js"></script>
+<script src="/js/clock.js"></script>
+<script src="/js/delete-confirm.js"></script>
+
+<% if (typeof licenseWarning !== 'undefined' && licenseWarning) { %>
+<div class="modal fade" id="licenseWarningModal" tabindex="-1" aria-labelledby="licenseWarningTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+    <div class="modal-content osa-glass-modal">
+      <div class="osa-glass-modal-body">
+        <button type="button" class="osa-glass-close" data-bs-dismiss="modal" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        <div class="osa-glass-icon osa-glass-icon-warning"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <h5 class="osa-glass-title" id="licenseWarningTitle">License expiring soon</h5>
+        <div class="osa-glass-count">
+          <span class="osa-glass-count-num"><%= licenseWarning.daysRemaining %></span>
+          <span class="osa-glass-count-unit">day<%= licenseWarning.daysRemaining === 1 ? '' : 's' %> left</span>
+        </div>
+        <p class="osa-glass-text">The OSA license expires on <strong><%= licenseWarning.expires %></strong>.</p>
+        <% if (currentUser.role === 'admin') { %>
+          <p class="osa-glass-text osa-glass-muted">Please renew it before then: get a new license file from your vendor and upload it under <strong>Admin &rarr; License</strong>. After the expiry date everyone except administrators is locked out of the system.</p>
+        <% } else { %>
+          <p class="osa-glass-text osa-glass-muted">After that date the system will stop working. <strong>Please contact your system administrator</strong> so the license can be renewed in time.</p>
+        <% } %>
+        <div class="osa-glass-actions">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Dismiss</button>
+          <% if (currentUser.role === 'admin') { %>
+            <a href="/admin/license" class="btn btn-primary"><i class="bi bi-shield-check"></i> Manage License</a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('licenseWarningModal');
+    if (el) bootstrap.Modal.getOrCreateInstance(el).show();
+  });
+</script>
+<% } %>
+<% } %>

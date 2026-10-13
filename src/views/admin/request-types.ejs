@@ -1,0 +1,92 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container-fluid">
+  <div class="admin-shell">
+    <%- include('_sidebar') %>
+    <main class="admin-main">
+      <h4 class="mb-3"><i class="bi bi-list-check"></i> Request Types</h4>
+
+  <% if (error) { %><div class="alert alert-danger py-2"><%= error %></div><% } %>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table mb-0 align-middle">
+        <colgroup>
+          <col style="width:18%"><col style="width:22%"><col style="width:12%">
+          <col style="width:18%"><col style="width:8%"><col style="width:22%">
+        </colgroup>
+        <thead class="table-light"><tr><th>Name</th><th>Description</th><th>Priority</th><th>Handled By</th><th>Tickets</th><th></th></tr></thead>
+        <tbody>
+          <%# Add row: same columns as the rows below, so the fields line up %>
+          <tr style="background:#eef4ff;">
+            <td>
+              <input type="text" name="name" class="form-control form-control-sm" placeholder="New request type, e.g. Hardware Issue" required form="rt-add-form">
+            </td>
+            <td>
+              <input type="text" name="description" class="form-control form-control-sm" placeholder="Description (optional)" form="rt-add-form">
+            </td>
+            <td>
+              <select name="default_priority" class="form-select form-select-sm" form="rt-add-form">
+                <% priorities.forEach(p => { %>
+                  <option value="<%= p.priority %>" <%= p.priority === 'Medium' ? 'selected' : '' %>><%= p.priority %></option>
+                <% }) %>
+              </select>
+            </td>
+            <td>
+              <select name="handling_department_id" class="form-select form-select-sm" form="rt-add-form">
+                <option value="">— Not set —</option>
+                <% departments.forEach(d => { %>
+                  <option value="<%= d.id %>"><%= d.name %></option>
+                <% }) %>
+              </select>
+            </td>
+            <td></td>
+            <td class="text-end">
+              <form id="rt-add-form" method="POST" action="/admin/request-types" class="d-none"></form>
+              <button class="btn btn-primary btn-sm" type="submit" form="rt-add-form"><i class="bi bi-plus"></i> Add</button>
+            </td>
+          </tr>
+          <% requestTypes.forEach(rt => { %>
+            <tr>
+              <td>
+                <input type="text" name="name" class="form-control form-control-sm" value="<%= rt.name %>" required form="rt-form-<%= rt.id %>">
+              </td>
+              <td>
+                <input type="text" name="description" class="form-control form-control-sm" placeholder="Description" value="<%= rt.description || '' %>" form="rt-form-<%= rt.id %>">
+              </td>
+              <td>
+                <select name="default_priority" class="form-select form-select-sm" form="rt-form-<%= rt.id %>">
+                  <% priorities.forEach(p => { %>
+                    <option value="<%= p.priority %>" <%= rt.default_priority === p.priority ? 'selected' : '' %>><%= p.priority %></option>
+                  <% }) %>
+                </select>
+              </td>
+              <td>
+                <select name="handling_department_id" class="form-select form-select-sm" form="rt-form-<%= rt.id %>">
+                  <option value="" <%= !rt.handling_department_id ? 'selected' : '' %>>— Not set —</option>
+                  <% departments.forEach(d => { %>
+                    <option value="<%= d.id %>" <%= rt.handling_department_id === d.id ? 'selected' : '' %>><%= d.name %></option>
+                  <% }) %>
+                </select>
+              </td>
+              <td><%= rt.ticket_count %></td>
+              <td class="text-end">
+                <form id="rt-form-<%= rt.id %>" method="POST" action="/admin/request-types/<%= rt.id %>/edit" class="d-none"></form>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-primary" type="submit" form="rt-form-<%= rt.id %>" title="Save"><i class="bi bi-check-lg"></i></button>
+                  <form method="POST" action="/admin/request-types/<%= rt.id %>/delete">
+                    <button class="btn btn-outline-danger js-delete-btn" type="button" data-label="request type &quot;<%= rt.name %>&quot;"><i class="bi bi-trash"></i></button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+    </main>
+  </div>
+</div>
+<script src="/js/admin-sidebar.js"></script>
+<%- include('../partials/foot') %>

@@ -1,0 +1,117 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h4 class="mb-3"><i class="bi bi-plus-circle"></i> New Ticket</h4>
+
+  <div class="card p-4 mx-auto" style="max-width: 720px;">
+    <% if (error) { %>
+      <div class="alert alert-danger py-2"><%= error %></div>
+    <% } %>
+    <form method="POST" action="/tickets" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label class="form-label">Subject <span class="text-danger">*</span></label>
+        <input type="text" name="subject" class="form-control" placeholder="Brief summary of the issue"
+               value="<%= values.subject %>" required>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Request Type <span class="text-danger">*</span></label>
+          <select name="request_type_id" id="ticketRequestType" class="form-select" required>
+            <option value="" disabled <%= !values.request_type_id ? 'selected' : '' %>>— Select —</option>
+            <% requestTypes.forEach(rt => { %>
+              <option value="<%= rt.id %>" data-dept="<%= rt.handling_department_id || '' %>" <%= String(values.request_type_id) === String(rt.id) ? 'selected' : '' %>><%= rt.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Priority</label>
+          <select name="priority" class="form-select">
+            <% priorities.forEach(p => { %>
+              <option value="<%= p.priority %>" <%= (values.priority === p.priority || (!values.priority && p.priority === 'Medium')) ? 'selected' : '' %>><%= p.emoji %> <%= p.priority %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Department <span class="text-danger">*</span> <span class="text-muted small">(asked to do the job)</span></label>
+          <select name="department_id" id="ticketDepartment" class="form-select" required>
+            <option value="" disabled <%= !values.department_id ? 'selected' : '' %>>— Select —</option>
+            <% departments.forEach(d => { %>
+              <option value="<%= d.id %>" <%= String(values.department_id) === String(d.id) ? 'selected' : '' %>><%= d.name %></option>
+            <% }) %>
+          </select>
+          <div class="form-text">Submitted from: <strong><%= submitterDepartment || 'no department set on your account' %></strong> (filled in automatically)</div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Room Number <span class="text-muted small">(if applicable)</span></label>
+          <input type="text" name="room_number" class="form-control" list="roomsDatalist"
+                 placeholder="Start typing a room number..." autocomplete="off" value="<%= values.room_number %>">
+          <datalist id="roomsDatalist">
+            <% rooms.forEach(r => { %>
+              <option value="<%= r.number %>">
+            <% }) %>
+          </datalist>
+          <div class="form-text">Must match a room already in the system — pick one from the suggestions as you type.</div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Room Status <span class="text-muted small">(if applicable)</span></label>
+        <select name="room_occupancy" class="form-select">
+          <option value="" <%= !values.room_occupancy ? 'selected' : '' %>>— Not set —</option>
+          <option value="Vacant" <%= values.room_occupancy === 'Vacant' ? 'selected' : '' %>>🟢 Vacant</option>
+          <option value="Occupied - Guest In" <%= values.room_occupancy === 'Occupied - Guest In' ? 'selected' : '' %>>🟠 Occupied — Guest In</option>
+          <option value="Occupied - Guest Out" <%= values.room_occupancy === 'Occupied - Guest Out' ? 'selected' : '' %>>⚪ Occupied — Guest Out</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Staff Name <span class="text-muted small">(optional — pick from the list if reporting on someone else's behalf)</span></label>
+        <select name="reported_by_name" class="form-select">
+          <option value="">— Not set —</option>
+          <% reporterGroups.forEach(g => { %>
+            <optgroup label="<%= g.name %>">
+              <% g.members.forEach(m => { %><option value="<%= m %>" <%= values.reported_by_name === m ? 'selected' : '' %>><%= m %></option><% }) %>
+            </optgroup>
+          <% }) %>
+        </select>
+        <% if (reporterGroups.length === 0) { %><div class="form-text"><%= reporterLimited ? 'No staff are listed for your department yet.' : 'No staff names yet.' %> An administrator can add them under Admin &rarr; Staff.</div><% } %>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="5" placeholder="Please describe the issue in detail..."><%= values.description %></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Photos <span class="text-muted small">(optional)</span></label>
+        <input type="file" name="photos" class="form-control" accept="image/*" multiple>
+        <div class="form-text">
+          <i class="bi bi-camera"></i> On your phone, tap this to take a new photo or choose one from your gallery. Up to 6 photos, 10MB each.
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> Submit Ticket</button>
+        <a href="/tickets" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  // Picking a request type suggests the department that normally handles it
+  // (still changeable).
+  (function () {
+    var type = document.getElementById('ticketRequestType');
+    var dept = document.getElementById('ticketDepartment');
+    if (!type || !dept) return;
+    type.addEventListener('change', function () {
+      var d = type.options[type.selectedIndex].getAttribute('data-dept');
+      if (d && dept.querySelector('option[value="' + d + '"]')) dept.value = d;
+    });
+  })();
+</script>
+<%- include('../partials/foot') %>

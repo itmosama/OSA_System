@@ -1,0 +1,8 @@
+<%# Round staff photo, or the first letters of the name when there is none. Locals: name, photo, size (px, default 36) %>
+<% const av = (typeof size !== 'undefined' && size) ? size : 36;
+   const initials = String(name || '?').trim().split(/\s+/).slice(0, 2).map(w => w.charAt(0).toUpperCase()).join(''); %>
+<% if (typeof photo !== 'undefined' && photo) { %>
+  <img src="/uploads/<%= photo %>" alt="<%= name %>" class="osa-avatar" style="width:<%= av %>px;height:<%= av %>px;">
+<% } else { %>
+  <span class="osa-avatar osa-avatar-initials" style="width:<%= av %>px;height:<%= av %>px;font-size:<%= Math.round(av * 0.38) %>px;" aria-hidden="true"><%= initials %></span>
+<% } %>

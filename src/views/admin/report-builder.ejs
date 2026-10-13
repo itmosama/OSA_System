@@ -1,0 +1,158 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<%
+  const o = report.options;
+  const has = (arr, v) => arr.map(String).includes(String(v));
+%>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h4 class="mb-0"><i class="bi bi-sliders"></i> Custom Report</h4>
+    <a href="/admin/reports" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Reports</a>
+  </div>
+
+  <% if (scopeNote) { %><div class="alert alert-info py-2 small"><i class="bi bi-funnel"></i> <%= scopeNote %></div><% } %>
+
+  <form method="GET" action="/admin/reports/builder" id="builderForm">
+    <input type="hidden" name="run" value="1">
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card p-3 h-100">
+          <h6 class="text-muted mb-3"><i class="bi bi-funnel"></i> 1. What to include</h6>
+          <div class="row g-2">
+            <div class="col-6"><label class="form-label small mb-1">Created from</label><input type="date" name="date_from" class="form-control form-control-sm" value="<%= o.dateFrom %>"></div>
+            <div class="col-6"><label class="form-label small mb-1">Created to</label><input type="date" name="date_to" class="form-control form-control-sm" value="<%= o.dateTo %>"></div>
+            <div class="col-md-6">
+              <label class="form-label small mb-1">Requested department</label>
+              <select name="department_id" multiple size="5" class="form-select form-select-sm">
+                <% choices.departments.forEach(d => { %><option value="<%= d.id %>" <%= has(o.requestedDepts, d.id) ? 'selected' : '' %>><%= d.name %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small mb-1">Submitted from department</label>
+              <select name="submitted_dept_id" multiple size="5" class="form-select form-select-sm">
+                <% choices.departments.forEach(d => { %><option value="<%= d.id %>" <%= has(o.submittedDepts, d.id) ? 'selected' : '' %>><%= d.name %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small mb-1">Staff member</label>
+              <select name="staff_id" multiple size="5" class="form-select form-select-sm">
+                <option value="none" <%= has(o.staffIds, 'none') ? 'selected' : '' %>>— Unassigned —</option>
+                <% choices.staff.forEach(s => { %><option value="<%= s.id %>" <%= has(o.staffIds, s.id) ? 'selected' : '' %>><%= s.full_name %><%= s.dept ? ' (' + s.dept + ')' : '' %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small mb-1">Request type</label>
+              <select name="request_type_id" multiple size="5" class="form-select form-select-sm">
+                <% choices.requestTypes.forEach(t => { %><option value="<%= t.id %>" <%= has(o.requestTypes, t.id) ? 'selected' : '' %>><%= t.name %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <div class="form-label small mb-1">Status</div>
+              <% choices.statuses.forEach(s => { %>
+                <label class="form-check form-check-inline small"><input class="form-check-input" type="checkbox" name="status" value="<%= s %>" <%= has(o.statuses, s) ? 'checked' : '' %>> <%= s %></label>
+              <% }) %>
+            </div>
+            <div class="col-md-6">
+              <div class="form-label small mb-1">Priority</div>
+              <% choices.priorities.forEach(p => { %>
+                <label class="form-check form-check-inline small"><input class="form-check-input" type="checkbox" name="priority" value="<%= p %>" <%= has(o.priorities, p) ? 'checked' : '' %>> <%= p %></label>
+              <% }) %>
+            </div>
+          </div>
+          <div class="form-text mt-2">Leave a list empty to include everything. Hold <kbd>Ctrl</kbd> to pick several.</div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card p-3 mb-3">
+          <h6 class="text-muted mb-3"><i class="bi bi-layout-three-columns"></i> 2. What to show</h6>
+          <div class="row row-cols-2 g-1">
+            <% columnsAll.forEach(c => { %>
+              <div class="col"><label class="form-check small"><input class="form-check-input" type="checkbox" name="columns" value="<%= c.key %>" <%= has(o.columns, c.key) ? 'checked' : '' %>> <%= c.label %></label></div>
+            <% }) %>
+          </div>
+          <div class="small mt-2"><a href="#" id="colsAll">Select all</a> · <a href="#" id="colsNone">None</a></div>
+        </div>
+        <div class="card p-3">
+          <h6 class="text-muted mb-3"><i class="bi bi-sort-down"></i> 3. How to arrange it</h6>
+          <div class="row g-2">
+            <div class="col-md-12">
+              <label class="form-label small mb-1">Group by</label>
+              <select name="group_by" class="form-select form-select-sm">
+                <% groupsAll.forEach(g => { %><option value="<%= g.key %>" <%= o.groupBy === g.key ? 'selected' : '' %>><%= g.label %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-8">
+              <label class="form-label small mb-1">Sort by</label>
+              <select name="sort_by" class="form-select form-select-sm">
+                <% sortsAll.forEach(s => { %><option value="<%= s.key %>" <%= o.sortBy === s.key ? 'selected' : '' %>><%= s.label %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-4">
+              <label class="form-label small mb-1">Order</label>
+              <select name="sort_dir" class="form-select form-select-sm">
+                <option value="asc" <%= o.sortDir === 'asc' ? 'selected' : '' %>>Ascending</option>
+                <option value="desc" <%= o.sortDir === 'desc' ? 'selected' : '' %>>Descending</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap mt-3">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-eye"></i> Show report</button>
+      <button type="submit" class="btn btn-outline-danger" formaction="/admin/reports/export" name="format" value="pdf"><i class="bi bi-file-earmark-pdf"></i> Export PDF</button>
+      <button type="submit" class="btn btn-outline-success" formaction="/admin/reports/export" name="format" value="xlsx"><i class="bi bi-file-earmark-excel"></i> Export Excel</button>
+      <button type="submit" class="btn btn-outline-secondary" formaction="/admin/reports/export" name="format" value="csv"><i class="bi bi-filetype-csv"></i> Export CSV</button>
+      <a href="/admin/reports/builder" class="btn btn-link">Reset</a>
+    </div>
+  </form>
+
+  <% if (run) { %>
+    <div class="card mt-4">
+      <div class="card-body pb-2">
+        <div class="d-flex justify-content-between flex-wrap gap-2">
+          <h6 class="mb-1">Report preview</h6>
+          <div class="small text-muted">
+            <%= report.total %> ticket<%= report.total === 1 ? '' : 's' %>
+            <% if (report.summary.finished) { %> · <%= report.summary.finished %> finished<% } %>
+            <% if (report.summary.avgTime) { %> · avg time to resolve <%= report.summary.avgTime %><% } %>
+            <% if (report.summary.slaRate !== null) { %> · <%= report.summary.slaRate %>% within SLA<% } %>
+          </div>
+        </div>
+        <div class="small text-muted mb-2">
+          <%= report.filters.length ? report.filters.join(' | ') : 'No filters' %> · Grouped by: <%= report.groupLabel %> · Sorted by: <%= report.sortLabel %>
+        </div>
+      </div>
+      <% if (report.total === 0) { %>
+        <div class="card-body text-center text-muted">No tickets match these choices.</div>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light"><tr><% report.columns.forEach(c => { %><th><%= c.label %></th><% }) %></tr></thead>
+            <% report.groups.forEach(g => { %>
+              <tbody>
+                <% if (o.groupBy) { %>
+                  <tr class="table-primary"><td colspan="<%= report.columns.length %>"><strong><%= g.label %></strong>
+                    <span class="small text-muted ms-2"><%= g.summary.count %> ticket<%= g.summary.count === 1 ? '' : 's' %> · <%= g.summary.finished %> finished<% if (g.summary.avgTime) { %> · avg <%= g.summary.avgTime %><% } %><% if (g.summary.slaRate !== null) { %> · <%= g.summary.slaRate %>% within SLA<% } %></span></td></tr>
+                <% } %>
+                <% g.rows.forEach(r => { %>
+                  <tr><% report.columns.forEach(c => { %><td><%= c.key === 'ticket_number' ? '' : c.get(r) %><% if (c.key === 'ticket_number') { %><a href="/tickets/<%= r.id %>" class="text-decoration-none"><%= r.ticket_number %></a><% } %></td><% }) %></tr>
+                <% }) %>
+              </tbody>
+            <% }) %>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  <% } %>
+</div>
+<script>
+  (function () {
+    function setAll(on) { document.querySelectorAll('input[name=columns]').forEach(function (c) { c.checked = on; }); }
+    document.getElementById('colsAll').addEventListener('click', function (e) { e.preventDefault(); setAll(true); });
+    document.getElementById('colsNone').addEventListener('click', function (e) { e.preventDefault(); setAll(false); });
+  })();
+</script>
+<%- include('../partials/foot') %>

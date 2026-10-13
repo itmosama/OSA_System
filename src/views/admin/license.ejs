@@ -1,0 +1,104 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container-fluid">
+  <div class="admin-shell">
+    <%- include('_sidebar') %>
+    <main class="admin-main">
+      <h4 class="mb-3"><i class="bi bi-shield-check"></i> License</h4>
+
+      <% if (error) { %><div class="alert alert-danger py-2"><%= error %></div><% } %>
+      <% if (success) { %><div class="alert alert-success py-2"><%= success %></div><% } %>
+
+      <div class="card p-4 mb-3" style="max-width: 640px;">
+        <h6 class="text-muted">Current Status</h6>
+        <% if (!status.activated) { %>
+          <p class="mb-0"><span class="badge text-bg-secondary">Not Activated</span> No license has been activated on this system yet.</p>
+        <% } else if (status.error) { %>
+          <p class="mb-0"><span class="badge text-bg-danger">Invalid</span> <%= status.error %></p>
+        <% } else { %>
+          <div class="row small">
+            <div class="col-6 mb-2"><span class="text-muted">Site:</span> <%= status.site %></div>
+            <div class="col-6 mb-2"><span class="text-muted">License ID:</span> <%= status.licenseId || '—' %></div>
+            <div class="col-6 mb-2"><span class="text-muted">Serial Number:</span> <%= status.serialNumber || '—' %></div>
+            <div class="col-6 mb-2"><span class="text-muted">Issued:</span> <%= status.issued || '—' %></div>
+            <div class="col-6 mb-2"><span class="text-muted">Expires:</span> <%= status.expires %></div>
+          </div>
+          <% if (status.expired) { %>
+            <span class="badge text-bg-danger">Expired</span> This license expired on <%= status.expires %>. Non-admin users are currently blocked from using the system.
+          <% } else if (status.daysRemaining <= 30) { %>
+            <span class="badge text-bg-warning text-dark">Expiring Soon</span> <%= status.daysRemaining %> day<%= status.daysRemaining === 1 ? '' : 's' %> remaining.
+          <% } else { %>
+            <span class="badge text-bg-success">Active</span> <%= status.daysRemaining %> days remaining.
+          <% } %>
+        <% } %>
+      </div>
+
+      <div class="card p-4 mb-3" style="max-width: 640px;">
+        <h6 class="text-muted">Hotel Logo</h6>
+        <p class="small text-muted mb-3">Upload your hotel's logo here. It is kept in the system so it can be shown on the pages and in the top bar.</p>
+        <% if (locals.logoError) { %><div class="alert alert-danger py-2 small"><%= locals.logoError %></div><% } %>
+        <% if (locals.logoSaved) { %><div class="alert alert-success py-2 small"><i class="bi bi-check-circle"></i> Logo saved.</div><% } %>
+        <% if (siteLogoUrl) { %>
+          <div class="d-flex align-items-center gap-3 mb-3 p-3 border rounded bg-light">
+            <img src="<%= siteLogoUrl %>" alt="Hotel logo" style="max-height:80px; max-width:220px; object-fit:contain;">
+            <form method="POST" action="/admin/license/logo/remove" class="ms-auto">
+              <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Remove</button>
+            </form>
+          </div>
+        <% } else { %>
+          <div class="text-muted small mb-3"><i class="bi bi-image"></i> No logo uploaded yet.</div>
+        <% } %>
+        <form method="POST" action="/admin/license/logo" enctype="multipart/form-data" class="d-flex gap-2 flex-wrap">
+          <input type="file" name="logo" id="logoFile" class="form-control form-control-sm" style="max-width:360px" accept="image/*" required>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-upload"></i> <%= siteLogoUrl ? 'Replace logo' : 'Upload logo' %></button>
+        </form>
+        <div class="form-text">PNG, JPG, WebP or GIF. A transparent PNG works best.</div>
+      </div>
+
+      <div class="card p-4" style="max-width: 640px;">
+        <h6 class="text-muted">Activate / Renew License</h6>
+        <p class="text-muted small">Upload the encrypted license file (<code>.lic</code>) your vendor sent you, or paste the license string instead.</p>
+        <form method="POST" action="/admin/license" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label small">License File</label>
+            <input type="file" name="license_file" class="form-control" accept=".lic">
+          </div>
+          <div class="text-center text-muted small mb-3">— or —</div>
+          <div class="mb-3">
+            <label class="form-label small">Paste License String</label>
+            <textarea name="license_string" class="form-control" rows="4" placeholder="Paste license string here..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Activate</button>
+        </form>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/admin-sidebar.js"></script>
+<script>
+  // Every logo is converted to PNG (and limited to 600 px wide) so it also fits in PDF and Excel exports.
+  (function () {
+    var input = document.getElementById('logoFile');
+    if (!input) return;
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (!file || file.type === 'image/png' && file.size < 600000) return;
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, 600 / img.width), c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(function (blob) {
+          URL.revokeObjectURL(url);
+          if (!blob) return;
+          var dt = new DataTransfer();
+          dt.items.add(new File([blob], file.name.replace(/\.[^.]+$/, '') + '.png', { type: 'image/png' }));
+          input.files = dt.files;
+        }, 'image/png');
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); };
+      img.src = url;
+    });
+  })();
+</script>
+<%- include('../partials/foot') %>

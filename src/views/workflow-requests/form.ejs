@@ -1,0 +1,86 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h4 class="mb-3">
+    <i class="bi bi-signpost-split"></i>
+    <%= mode === 'edit' ? 'Edit ' + request.reference_number : 'New Workflow Request' %>
+  </h4>
+
+  <div class="card p-4 mx-auto" style="max-width: 760px;">
+    <% if (mode === 'edit' && request.status === 'Returned to HR') { %>
+      <div class="alert alert-warning py-2">
+        <strong>Returned by <%= request.returned_by_step || 'a reviewer' %>:</strong>
+        <%= request.returned_reason || '(no reason given)' %>
+        <div class="small mt-1">Fix what was asked, then click <strong>Resubmit</strong>. It keeps the same reference number.</div>
+      </div>
+    <% } %>
+    <% if (error) { %><div class="alert alert-danger py-2"><%= error %></div><% } %>
+
+    <form method="POST" action="<%= mode === 'edit' ? '/workflow-requests/' + request.id + '/edit' : '/workflow-requests' %>" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label class="form-label">Title <span class="text-danger">*</span></label>
+        <input type="text" name="title" class="form-control" maxlength="150" placeholder="e.g. New laptop for the Sales Manager" value="<%= values.title %>" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">What is needed, and why? <span class="text-danger">*</span></label>
+        <textarea name="description" class="form-control" rows="5" maxlength="4000" placeholder="Describe what IT needs to do or provide, and the reason." required><%= values.description %></textarea>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Department <span class="text-danger">*</span></label>
+          <select name="department_id" class="form-select" required>
+            <option value="" disabled <%= !values.department_id ? 'selected' : '' %>>— Select —</option>
+            <% departments.forEach(d => { %>
+              <option value="<%= d.id %>" <%= String(values.department_id) === String(d.id) ? 'selected' : '' %>><%= d.name %></option>
+            <% }) %>
+          </select>
+          <div class="form-text">This department's Head reviews the request.</div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Who is it for? <span class="text-muted small">(optional)</span></label>
+          <input type="text" name="requested_for" class="form-control" maxlength="120" placeholder="e.g. a person's name or a team" value="<%= values.requested_for %>">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Priority</label>
+          <select name="priority" class="form-select">
+            <% priorities.forEach(p => { %>
+              <option value="<%= p.priority %>" <%= (values.priority === p.priority || (!values.priority && p.priority === 'Medium')) ? 'selected' : '' %>><%= p.emoji %> <%= p.priority %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Needed by <span class="text-muted small">(optional)</span></label>
+          <input type="date" name="needed_by" class="form-control" value="<%= values.needed_by %>">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Photos <span class="text-muted small">(optional)</span></label>
+        <input type="file" name="photos" class="form-control" accept="image/*" multiple>
+        <div class="form-text">Up to 6 photos, 10MB each, for example a screenshot or a picture of the item.</div>
+      </div>
+
+      <div class="alert alert-secondary small py-2">
+        <i class="bi bi-info-circle"></i>
+        After you submit: the Head of Department adds their input and any cost, Finance approves it only if there is a cost, and then it goes to IT.
+      </div>
+
+      <div class="d-flex gap-2 flex-wrap">
+        <% if (mode === 'edit' && request.status === 'Returned to HR') { %>
+          <button type="submit" name="action" value="submit" class="btn btn-primary"><i class="bi bi-send"></i> Resubmit</button>
+          <button type="submit" name="action" value="save" class="btn btn-outline-secondary"><i class="bi bi-save"></i> Save Changes</button>
+        <% } else { %>
+          <button type="submit" name="action" value="submit" class="btn btn-primary"><i class="bi bi-send"></i> Submit Request</button>
+          <button type="submit" name="action" value="draft" class="btn btn-outline-secondary"><i class="bi bi-save"></i> <%= mode === 'edit' ? 'Save Draft' : 'Save as Draft' %></button>
+        <% } %>
+        <a href="<%= mode === 'edit' ? '/workflow-requests/' + request.id : '/workflow-requests' %>" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+<%- include('../partials/foot') %>

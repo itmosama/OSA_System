@@ -1,0 +1,93 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container-fluid">
+  <div class="admin-shell">
+    <%- include('_sidebar') %>
+    <main class="admin-main">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <h4 class="mb-0"><i class="bi bi-shield-lock"></i> Permission Groups</h4>
+        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#newGroup"><i class="bi bi-plus-lg"></i> New Group</button>
+      </div>
+
+      <div class="perm-howto mb-3">
+        <div><span class="perm-step">1</span> Make a group and tick what its members may do.</div>
+        <div><span class="perm-step">2</span> Open <strong>Admin &rarr; Users</strong> and pick that group for each person.</div>
+        <div class="text-muted small mt-1">Admins can always do everything. Everyone else can only do what their group allows.</div>
+      </div>
+
+      <% if (error) { %><div class="alert alert-danger py-2"><%= error %></div><% } %>
+
+      <div class="collapse mb-3" id="newGroup">
+        <div class="card p-4">
+          <h6 class="mb-3">New group</h6>
+          <form method="POST" action="/admin/groups">
+            <div class="mb-3" style="max-width:420px;">
+              <label class="form-label small">Group name</label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. Housekeeping Supervisor" required>
+            </div>
+            <%- include('_group-permissions', { sections, permissions, group: null, prefix: 'new' }) %>
+            <button class="btn btn-primary mt-3" type="submit"><i class="bi bi-check-lg"></i> Create Group</button>
+          </form>
+        </div>
+      </div>
+
+      <% if (groups.length === 0) { %>
+        <div class="card p-4 text-center text-muted">No groups yet. Click <strong>New Group</strong> to make the first one.</div>
+      <% } %>
+
+      <div class="accordion" id="groupList">
+        <% groups.forEach(g => {
+             const total = permissions.filter(p => g[p.key]).length; %>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#grp<%= g.id %>">
+                <span class="fw-semibold me-3"><%= g.name %></span>
+                <span class="badge text-bg-light border me-2"><i class="bi bi-people"></i> <%= g.user_count %> user<%= g.user_count === 1 ? '' : 's' %></span>
+                <span class="d-none d-md-inline">
+                  <% sections.forEach(sec => {
+                       const n = permissions.filter(p => p.section === sec.key && g[p.key]).length;
+                       if (n) { %>
+                    <span class="badge perm-chip" style="--sec-color:<%= sec.color %>;"><i class="bi <%= sec.icon %>"></i> <%= sec.title %> <%= n %></span>
+                  <% } }) %>
+                  <% if (total === 0) { %><span class="text-muted small">No permissions yet</span><% } %>
+                </span>
+              </button>
+            </h2>
+            <div id="grp<%= g.id %>" class="accordion-collapse collapse" data-bs-parent="#groupList">
+              <div class="accordion-body">
+                <form method="POST" action="/admin/groups/<%= g.id %>/edit">
+                  <div class="mb-3" style="max-width:420px;">
+                    <label class="form-label small">Group name</label>
+                    <input type="text" name="name" class="form-control form-control-sm" value="<%= g.name %>" required>
+                  </div>
+                  <%- include('_group-permissions', { sections, permissions, group: g, prefix: 'g' + g.id }) %>
+                  <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check-lg"></i> Save Changes</button>
+                  </div>
+                </form>
+                <form method="POST" action="/admin/groups/<%= g.id %>/delete" class="mt-3 pt-3 border-top">
+                  <button type="button" class="btn btn-sm btn-outline-danger js-delete-btn" data-label="permission group &quot;<%= g.name %>&quot;">
+                    <i class="bi bi-trash"></i> Delete Group
+                  </button>
+                  <span class="text-muted small ms-2">People in this group keep their account but lose these permissions.</span>
+                </form>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/admin-sidebar.js"></script>
+<script>
+  // "All / None" for one area at a time.
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('.perm-all');
+    if (!link) return;
+    e.preventDefault();
+    var on = link.getAttribute('data-on') === '1';
+    link.closest('.perm-section').querySelectorAll('.perm-box').forEach(function (b) { b.checked = on; });
+  });
+</script>
+<%- include('../partials/foot') %>

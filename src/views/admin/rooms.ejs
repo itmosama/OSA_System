@@ -1,0 +1,112 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container-fluid">
+  <div class="admin-shell">
+    <%- include('_sidebar') %>
+    <main class="admin-main">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0"><i class="bi bi-door-open"></i> Rooms</h4>
+        <a href="/admin/room-types" class="btn btn-sm btn-outline-secondary"><i class="bi bi-building"></i> Manage Room Types</a>
+      </div>
+
+      <div class="row">
+        <div class="col-md-5">
+          <div class="card p-4 mb-3">
+            <h6 class="text-muted">Add Single Room</h6>
+            <% if (error) { %><div class="alert alert-danger py-2"><%= error %></div><% } %>
+            <form method="POST" action="/admin/rooms">
+              <div class="row g-2 mb-2">
+                <div class="col-6"><input type="text" name="number" class="form-control" placeholder="Room #" required></div>
+                <div class="col-6"><input type="text" name="floor" class="form-control" placeholder="Floor"></div>
+              </div>
+              <div class="mb-2">
+                <select name="room_type_id" class="form-select">
+                  <option value="">— Room type (optional) —</option>
+                  <% roomTypes.forEach(rt => { %>
+                    <option value="<%= rt.id %>"><%= rt.name %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <button class="btn btn-primary w-100" type="submit"><i class="bi bi-plus"></i> Add Room</button>
+            </form>
+          </div>
+
+          <div class="card p-4">
+            <h6 class="text-muted">Bulk Add Range</h6>
+            <p class="small text-muted">Quickly add a range of room numbers, e.g. 101 to 150.</p>
+            <form method="POST" action="/admin/rooms/bulk">
+              <div class="row g-2 mb-2">
+                <div class="col-4"><input type="number" name="from" class="form-control" placeholder="From" required></div>
+                <div class="col-4"><input type="number" name="to" class="form-control" placeholder="To" required></div>
+                <div class="col-4"><input type="text" name="floor" class="form-control" placeholder="Floor"></div>
+              </div>
+              <div class="mb-2">
+                <select name="room_type_id" class="form-select">
+                  <option value="">— Room type (optional) —</option>
+                  <% roomTypes.forEach(rt => { %>
+                    <option value="<%= rt.id %>"><%= rt.name %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <button class="btn btn-outline-primary w-100" type="submit"><i class="bi bi-layers"></i> Add Range</button>
+            </form>
+          </div>
+        </div>
+        <div class="col-md-7">
+          <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+            <div class="small text-muted" id="roomsDirtyMsg">No unsaved changes</div>
+            <button type="button" id="saveAllRooms" class="btn btn-primary btn-sm" disabled>
+              <i class="bi bi-save"></i> Save All Changes
+            </button>
+          </div>
+          <div id="roomsSaveAlert"></div>
+          <div class="card" style="max-height: 640px; overflow-y: auto;">
+            <div class="table-responsive">
+            <table class="table mb-0 align-middle">
+              <colgroup>
+                <col style="width:22%">
+                <col style="width:20%">
+                <col style="width:38%">
+                <col style="width:20%">
+              </colgroup>
+              <thead class="table-light"><tr><th>Room #</th><th>Floor</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <% rooms.forEach(r => { %>
+                  <tr data-room-id="<%= r.id %>">
+                    <td>
+                      <input type="text" name="number" class="form-control form-control-sm room-field" data-room-id="<%= r.id %>" data-field="number" data-original="<%= r.number %>" value="<%= r.number %>" required form="room-form-<%= r.id %>">
+                    </td>
+                    <td>
+                      <input type="text" name="floor" class="form-control form-control-sm room-field" data-room-id="<%= r.id %>" data-field="floor" data-original="<%= r.floor || '' %>" placeholder="Floor" value="<%= r.floor || '' %>" form="room-form-<%= r.id %>">
+                    </td>
+                    <td>
+                      <select name="room_type_id" class="form-select form-select-sm room-field" data-room-id="<%= r.id %>" data-field="room_type_id" data-original="<%= r.room_type_id || '' %>" form="room-form-<%= r.id %>">
+                        <option value="" <%= !r.room_type_id ? 'selected' : '' %>>— Type —</option>
+                        <% roomTypes.forEach(rt => { %>
+                          <option value="<%= rt.id %>" <%= r.room_type_id === rt.id ? 'selected' : '' %>><%= rt.name %></option>
+                        <% }) %>
+                      </select>
+                    </td>
+                    <td class="text-end">
+                      <form id="room-form-<%= r.id %>" method="POST" action="/admin/rooms/<%= r.id %>/edit" class="d-none"></form>
+                      <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" type="submit" form="room-form-<%= r.id %>" title="Save"><i class="bi bi-check-lg"></i></button>
+                        <form method="POST" action="/admin/rooms/<%= r.id %>/delete">
+                          <button class="btn btn-outline-danger js-delete-btn" type="button" data-label="room <%= r.number %>"><i class="bi bi-trash"></i></button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/admin-sidebar.js"></script>
+<script src="/js/rooms-bulk.js"></script>
+<%- include('../partials/foot') %>

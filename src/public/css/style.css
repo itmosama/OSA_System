@@ -1,0 +1,1107 @@
+body {
+  background-color: #f5f6f8;
+}
+.status-badge-Open { background-color: #0d6efd; }
+.status-badge-In-Progress { background-color: #fd7e14; }
+.status-badge-On-Hold { background-color: #6c757d; }
+.status-badge-Resolved { background-color: #198754; }
+.status-badge-Closed { background-color: #343a40; }
+
+/* Lost & Found item status */
+.status-badge-In-Storage { background-color: #0d6efd; }
+.status-badge-Returned-to-Guest { background-color: #198754; }
+.status-badge-Disposed { background-color: #6c757d; }
+
+/* Priority badges: the colour comes from Admin > Priority SLA (set inline per
+   badge), so only the shared shape/typography lives here. */
+.priority-badge {
+  display: inline-block;
+  padding: 0.25em 0.65em;
+  font-size: 0.8em;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  color: #fff;
+}
+
+.card { border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+/* Dark gradient background (login only) — near-black base with a cyan glow
+   rising from the bottom-right, a faint grid, and a light noise texture. */
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background-color: #05080a;
+  background-image:
+    radial-gradient(circle at 82% 92%, rgba(20,184,166,0.38), transparent 55%),
+    radial-gradient(circle at 15% 10%, rgba(13,110,120,0.18), transparent 45%),
+    linear-gradient(180deg, #05080a 0%, #06121a 55%, #072229 100%);
+}
+.login-wrapper::before {
+  /* faint grid overlay */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at 60% 70%, #000 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 60% 70%, #000 0%, transparent 75%);
+  pointer-events: none;
+}
+.login-wrapper::after {
+  /* subtle noise texture */
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+.login-wrapper .card { position: relative; z-index: 1; }
+
+/* SLA time-open status: green = on track, yellow = nearing due, red = overdue */
+[data-ticket-timer].sla-green { border-left: 4px solid #198754; }
+[data-ticket-timer].sla-yellow { border-left: 4px solid #ffc107; }
+[data-ticket-timer].sla-red { border-left: 4px solid #dc3545; }
+
+.sla-green .ticket-elapsed { color: #198754; }
+.sla-yellow .ticket-elapsed { color: #b8860b; }
+.sla-red .ticket-elapsed { color: #dc3545; }
+
+.ticket-sla-badge {
+  display: inline-block;
+  padding: 0.35em 0.7em;
+  border-radius: 0.375rem;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+.sla-green .ticket-sla-badge { background-color: #d1f0dd; color: #0f5132; }
+.sla-yellow .ticket-sla-badge { background-color: #fff3cd; color: #664d03; }
+.sla-red .ticket-sla-badge { background-color: #f8d7da; color: #842029; }
+
+/* Small status-filter tiles on the tickets dashboard */
+.status-tile { text-decoration: none; display: block; transition: transform .1s ease; }
+.status-tile:hover { transform: translateY(-2px); }
+.status-tile .card { border-left: 4px solid var(--tile-color, #6c757d); padding: 0.6rem 0.75rem; }
+.status-tile.active .card { box-shadow: 0 0 0 2px var(--tile-color, #6c757d) inset, 0 1px 3px rgba(0,0,0,0.08); }
+.status-tile-icon {
+  font-size: 1.1rem;
+  color: #fff;
+  background: var(--tile-color, #6c757d);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.status-tile-label { font-size: 0.72rem; line-height: 1.1; }
+.status-tile-count { font-size: 1.2rem; line-height: 1.1; }
+
+/* Small inline status-change dropdown shown next to each ticket in the list */
+.osa-status-mini i { font-size: 0.95rem; flex-shrink: 0; }
+.osa-status-mini select {
+  width: auto;
+  max-width: 9.5rem;
+  font-size: 0.78rem;
+  padding: 0.15rem 1.6rem 0.15rem 0.5rem;
+  border-color: var(--tile-color, #ced4da);
+  color: var(--tile-color, #212529);
+  font-weight: 600;
+}
+.osa-status-mini select:focus {
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--tile-color, #0d6efd) 25%, transparent);
+  border-color: var(--tile-color, #86b7fe);
+}
+
+/* Home screen module tiles */
+.osa-home-tile .card { transition: transform .12s ease, box-shadow .12s ease; }
+.osa-home-tile:hover .card { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+.osa-home-tile-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tile-color, #0d6efd) 12%, white);
+  color: var(--tile-color, #0d6efd);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+}
+
+/* Admin collapsible-sidebar dashboard layout */
+.admin-shell { display: flex; align-items: flex-start; gap: 0; }
+.admin-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  padding: 0.75rem 0;
+  position: sticky;
+  top: 1rem;
+  transition: width .15s ease;
+  overflow: hidden;
+}
+.admin-sidebar.collapsed { width: 64px; }
+.admin-sidebar-toggle {
+  display: flex; align-items: center; justify-content: flex-end;
+  padding: 0 0.75rem 0.5rem; border-bottom: 1px solid #eee; margin-bottom: 0.5rem;
+}
+.admin-sidebar-toggle button { border: none; background: none; color: #6c757d; font-size: 1.1rem; padding: 0.25rem; }
+.admin-nav-link {
+  display: flex; align-items: center; gap: 0.65rem;
+  padding: 0.55rem 0.9rem; color: #495057; text-decoration: none; font-size: 0.92rem;
+  white-space: nowrap; border-left: 3px solid transparent;
+}
+.admin-nav-link i { font-size: 1.05rem; width: 1.2rem; text-align: center; flex-shrink: 0; }
+.admin-nav-link:hover { background: #f5f6f8; color: #212529; }
+.admin-nav-link.active { background: #eaf2ff; color: #0d6efd; border-left-color: #0d6efd; font-weight: 600; }
+.admin-sidebar.collapsed .admin-nav-link span { display: none; }
+.admin-main { flex: 1 1 auto; min-width: 0; padding-left: 1.25rem; }
+@media (max-width: 767.98px) {
+  .admin-shell { flex-direction: column; }
+  .admin-sidebar { width: 100% !important; position: static; }
+  .admin-main { padding-left: 0; padding-top: 1rem; }
+  .admin-sidebar.collapsed .admin-nav-link span { display: inline; }
+}
+
+/* Simple lightbox for viewing ticket photos full-size */
+.photo-thumb { cursor: zoom-in; transition: transform .1s ease; }
+.photo-thumb:hover { transform: scale(1.04); }
+.lightbox-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  z-index: 1080; align-items: center; justify-content: center; padding: 2rem;
+}
+.lightbox-overlay.open { display: flex; }
+.lightbox-overlay img { max-width: 100%; max-height: 100%; border-radius: 0.25rem; box-shadow: 0 4px 24px rgba(0,0,0,0.5); }
+.lightbox-close {
+  position: absolute; top: 1rem; right: 1.25rem; color: #fff; font-size: 2rem;
+  background: none; border: none; line-height: 1; opacity: 0.85;
+}
+.lightbox-close:hover { opacity: 1; }
+
+/* Reports dashboard (app-1 inspired): stat cards, active-ticket progress rows, activity feed */
+.report-stat-card { padding: 1.1rem 1.25rem; }
+.report-active-ticket {
+  padding: 0.75rem;
+  border: 1px solid #eef0f2;
+  border-radius: 0.5rem;
+  transition: background-color .1s ease, border-color .1s ease;
+}
+.report-active-ticket:hover { background-color: #f8f9fa; border-color: #dee2e6; }
+.report-activity-icon {
+  width: 2rem; height: 2rem; border-radius: 50%;
+  background: #f1f3f5; color: #6c757d;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.9rem;
+}
+
+/* OSA brand logo in the navbar (white-background artwork, so it sits on a
+   small white chip to read cleanly against the dark navbar). */
+.osa-logo-img {
+  height: 40px;
+  width: auto;
+  background: #fff;
+  border-radius: 0.3rem;
+  padding: 3px 7px;
+}
+/* The logo artwork itself bakes in the full wordmark + slogan stacked on
+   multiple lines, which turns unreadable at navbar height — so the navbar
+   pairs the small logo chip with this crisp single-line text label instead.
+   (The full logo image alone is still used at full size on the login page.) */
+.osa-brand-name {
+  color: #ffffff;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Top nav tabs: white text; bold + framed in the logo's red/green when the
+   current page's tab is active. */
+:root {
+  --osa-red: #cf1e2c;
+  --osa-green: #1a7a3d;
+}
+.osa-nav-link,
+.osa-nav-link:hover,
+.osa-nav-link:focus {
+  color: #ffffff !important;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.75rem;
+  margin: 0 0.1rem;
+  transition: background-color .1s ease, border-color .1s ease;
+}
+.osa-nav-link:hover {
+  background: linear-gradient(90deg, rgba(207,30,44,0.16), rgba(26,122,61,0.16));
+}
+.osa-nav-link.active {
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(207,30,44,0.22), rgba(26,122,61,0.22));
+  border-color: var(--osa-red);
+}
+
+/* App footer, shown on every signed-in page */
+.osa-footer {
+  padding: 1.25rem 0 2rem;
+  text-align: center;
+  color: #9aa1ab;
+  font-size: 0.8rem;
+}
+.osa-footer .osa-footer-brand { font-weight: 700; color: #6c757d; }
+
+/* Navbar clock — same white as the nav tabs, clickable to open a calendar */
+.osa-clock {
+  color: #ffffff !important;
+  cursor: pointer;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.375rem;
+  border: 1px solid transparent;
+  transition: background-color .1s ease, border-color .1s ease;
+}
+.osa-clock:hover, .osa-clock:focus {
+  background: linear-gradient(90deg, rgba(207,30,44,0.16), rgba(26,122,61,0.16));
+  border-color: var(--osa-red);
+}
+/* Invisible date input laid exactly over the clock text — clicking it opens the
+   native calendar anchored right under the clock, instead of wherever a
+   separately-placed hidden input happened to sit in the page. */
+.osa-clock-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+}
+
+/* Compact-but-comfortable nav bar */
+.osa-navbar {
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+  min-height: auto;
+  font-size: 0.92rem;
+}
+.osa-navbar .navbar-brand {
+  font-size: 1.05rem;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.osa-navbar .navbar-brand i { font-size: 1.15rem; }
+.osa-navbar .osa-nav-link {
+  padding: 0.5rem 0.85rem;
+  font-size: 0.88rem;
+}
+.osa-navbar .osa-nav-link i { font-size: 1.4rem; }
+.osa-navbar .osa-clock { font-size: 0.85rem; padding: 0.4rem 0.6rem; }
+.osa-navbar .dropdown .btn { padding: 0.35rem 0.6rem; font-size: 0.85rem; }
+.osa-navbar .badge { font-size: 0.68rem; }
+.osa-navbar .bi-bell { font-size: 1rem; }
+
+/* Nav always stays one row: logo, tabs, clock and account never wrap or collapse
+   behind a hamburger. On narrow screens the tab row scrolls horizontally and
+   labels shrink to icons-only (see the d-none d-md-inline spans in nav.ejs). */
+.osa-navbar .navbar-nav {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+}
+.osa-navbar .navbar-nav::-webkit-scrollbar { display: none; }
+@media (max-width: 767.98px) {
+  .osa-nav-link { padding: 0.4rem 0.55rem; margin: 0; }
+}
+
+/* Notification bell badge + dropdown */
+.osa-notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 0.6rem;
+  padding: 0.25em 0.4em;
+}
+.osa-notif-dropdown {
+  min-width: 320px;
+  max-width: 380px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Compact admin dashboard tiles: icon + "Label 123" on one line */
+.osa-admin-tile { padding: 0.9rem 1rem !important; transition: transform .1s ease, box-shadow .1s ease; }
+.osa-admin-tile:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+.osa-admin-tile-icon { font-size: 1.9rem; flex-shrink: 0; }
+.osa-admin-tile .small { font-size: 0.85rem; }
+.osa-admin-tile .fw-bold { font-size: 1.15rem; }
+
+/* Preventive Maintenance summary tiles: icon, then name, then number, on one line */
+.osa-tile-line { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 0.55rem; }
+.osa-tile-name { font-size: 1rem; font-weight: 700; color: #212529; }
+.osa-tile-num { font-size: 1.4rem; font-weight: 800; line-height: 1; color: #212529; }
+
+/* ---------- Workflow request progress tracker ---------- */
+.wf-tracker { display: flex; justify-content: space-between; gap: .5rem; position: relative; }
+.wf-step { flex: 1; text-align: center; position: relative; }
+.wf-step:not(:last-child)::after {
+  content: ''; position: absolute; top: 20px; left: calc(50% + 24px); right: calc(-50% + 24px);
+  height: 3px; background: #dee2e6;
+}
+.wf-step.wf-done:not(:last-child)::after { background: #198754; }
+.wf-dot {
+  width: 40px; height: 40px; border-radius: 50%; margin: 0 auto .35rem;
+  display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+  background: #e9ecef; color: #6c757d; border: 2px solid #dee2e6;
+}
+.wf-done .wf-dot { background: #198754; border-color: #198754; color: #fff; }
+.wf-current .wf-dot { background: #fff; border-color: #0d6efd; color: #0d6efd; box-shadow: 0 0 0 4px rgba(13,110,253,.15); }
+.wf-returned .wf-dot { background: #dc3545; border-color: #dc3545; color: #fff; }
+.wf-skipped .wf-dot { background: #f8f9fa; border-style: dashed; }
+.wf-label { font-weight: 600; font-size: .85rem; }
+.wf-sub { font-size: .72rem; color: #6c757d; min-height: 1em; }
+@media (max-width: 575px) { .wf-label { font-size: .72rem; } .wf-dot { width: 34px; height: 34px; } .wf-step:not(:last-child)::after { top: 17px; } }
+
+/* ---------- Permission Groups page ---------- */
+.perm-howto { background: #fff; border: 1px solid #e3e6ea; border-radius: .6rem; padding: .75rem 1rem; max-width: 760px; }
+.perm-step { display: inline-flex; align-items: center; justify-content: center; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: #0d6efd; color: #fff; font-size: .75rem; font-weight: 700; margin-right: .35rem; }
+.perm-section { border: 1px solid #e3e6ea; border-left: 4px solid var(--sec-color, #6c757d); border-radius: .5rem; padding: .75rem 1rem; background: #fff; }
+.perm-section-title { font-weight: 700; color: var(--sec-color, #343a40); }
+.perm-chip { background: color-mix(in srgb, var(--sec-color, #6c757d) 14%, #fff); color: var(--sec-color, #343a40); border: 1px solid color-mix(in srgb, var(--sec-color, #6c757d) 35%, #fff); font-weight: 600; margin-right: .2rem; }
+
+/* Bell: unread ticket notifications */
+.osa-notif-unread { background: #eef5ff; }
+.osa-notif-dot { width: .55rem; height: .55rem; border-radius: 50%; background: #dc3545; margin-top: .3rem; }
+
+/* ---------- Alert cards (notifications page + pop-ups) ---------- */
+.osa-alert-stack { display: flex; flex-direction: column; gap: .75rem; }
+.osa-alert {
+  display: flex; align-items: flex-start; gap: .75rem;
+  border: 1px solid #e5e7eb; border-radius: .5rem; background: #fff;
+  padding: 1rem; box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+}
+.osa-alert-icon { font-size: 1.15rem; line-height: 1.25; margin-top: .1rem; flex-shrink: 0; }
+.osa-alert-success .osa-alert-icon { color: #047857; }
+.osa-alert-info .osa-alert-icon { color: #212529; }
+.osa-alert-warning .osa-alert-icon { color: #b45309; }
+.osa-alert-error .osa-alert-icon { color: #dc2626; }
+.osa-alert-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .15rem; color: inherit; text-decoration: none; }
+.osa-alert-title { font-size: .875rem; font-weight: 600; color: #212529; }
+.osa-alert-text { font-size: .75rem; color: #6b7280; overflow-wrap: anywhere; }
+.osa-alert-meta { font-size: .7rem; color: #9ca3af; }
+.osa-alert-x { border: 0; background: none; padding: 0; color: #9ca3af; flex-shrink: 0; transition: color .15s; }
+.osa-alert-x:hover { color: #212529; }
+a.osa-alert-body:hover .osa-alert-title { text-decoration: underline; }
+.osa-alert.is-unread { border-left: 3px solid #dc2626; }
+.osa-alert-empty { border: 1px dashed #d1d5db; border-radius: .5rem; padding: 2.25rem 1rem; text-align: center; color: #6b7280; font-size: .875rem; }
+.osa-alert-group-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; margin: 1.25rem 0 .5rem; }
+/* bootstrap toast wrapper: let the card provide the look */
+.osa-toast { background: transparent; box-shadow: none; width: 340px; max-width: calc(100vw - 2rem); }
+.osa-toast .osa-alert { box-shadow: 0 4px 14px rgba(0, 0, 0, .12); }
+
+/* ---------- Sign-in card (clean minimal style) ---------- */
+.osa-signin {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 430px; margin: 1rem;
+  padding: 2rem;
+  display: flex; flex-direction: column; align-items: center;
+  background: linear-gradient(180deg, #f0f9ff, #fff);
+  border: 1px solid #dbeafe; border-radius: 1.5rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, .25);
+  color: #111;
+}
+.osa-signin-logo {
+  background: #fff; border-radius: 1rem; padding: .6rem 1rem; margin-bottom: 1.25rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .1);
+}
+.osa-signin-logo img { display: block; max-width: 210px; width: 100%; height: auto; }
+.osa-signin-title { font-size: 1.5rem; font-weight: 600; margin: 0 0 .4rem; text-align: center; }
+.osa-signin-sub { color: #6b7280; font-size: .8rem; text-align: center; margin: 0 0 1.5rem; white-space: nowrap; }
+@media (max-width: 460px) { .osa-signin-sub { white-space: normal; } }
+.osa-signin-field { position: relative; margin-bottom: .75rem; }
+.osa-signin-field-icon { position: absolute; left: .85rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
+.osa-signin-field input {
+  width: 100%; padding: .55rem 2.4rem; font-size: .9rem;
+  border: 1px solid #e5e7eb; border-radius: .75rem; background: #f9fafb; color: #111;
+}
+.osa-signin-field input:focus { outline: none; border-color: #bfdbfe; box-shadow: 0 0 0 3px rgba(191, 219, 254, .8); }
+.osa-signin-eye { position: absolute; right: .7rem; top: 50%; transform: translateY(-50%); border: 0; background: none; color: #9ca3af; padding: 0; }
+.osa-signin-eye:hover { color: #111; }
+.osa-signin-error { color: #dc2626; font-size: .85rem; margin: .25rem 0 .5rem; }
+.osa-signin-btn {
+  width: 100%; margin-top: .5rem; padding: .6rem; border: 0; border-radius: .75rem;
+  background: linear-gradient(180deg, #374151, #111827); color: #fff; font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .2); transition: filter .15s;
+}
+.osa-signin-btn:hover { filter: brightness(1.12); }
+.osa-signin-divider { display: flex; align-items: center; width: 100%; margin: 1.25rem 0 .5rem; }
+.osa-signin-divider::before, .osa-signin-divider::after { content: ""; flex: 1; border-top: 1px dashed #e5e7eb; }
+.osa-signin-divider span { margin: 0 .6rem; font-size: .75rem; color: #9ca3af; }
+.osa-signin-help { font-size: .78rem; color: #6b7280; text-align: center; margin: 0; }
+
+/* Small count on a navigation tab icon */
+.osa-nav-link { position: relative; }
+.osa-tab-badge {
+  position: absolute; top: 0; right: 0;
+  min-width: 1.1rem; height: 1.1rem; padding: 0 .3rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 999px; background: #dc2626; color: #fff;
+  font-size: .65rem; font-weight: 700; line-height: 1;
+  border: 2px solid #212529;
+}
+
+/* ---------- Phone layout ---------- */
+.admin-sidebar-mobile-toggle { display: none; }
+.osa-ticket-card { padding: .75rem .9rem; cursor: pointer; }
+.osa-ticket-card-red { background: #fdecee; }
+.osa-ticket-card-yellow { background: #fff8e1; }
+
+@media (max-width: 767.98px) {
+  /* Top bar: row 1 = logo, bell, account; row 2 = the tab icons spread across the width. */
+  .osa-navbar { flex-wrap: wrap !important; padding: .4rem .5rem; row-gap: .35rem; }
+  .osa-navbar > .container { display: contents !important; }
+  .osa-navbar .navbar-brand { order: 1; flex: 1 1 auto; padding-left: .25rem !important; }
+  .osa-navbar .dropdown { order: 2; margin-left: .35rem; }
+  .osa-navbar .navbar-nav {
+    order: 3; flex: 0 0 100% !important; width: 100%;
+    justify-content: space-between; gap: 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, .12); padding-top: .35rem;
+  }
+  .osa-navbar .navbar-nav .nav-item { flex: 1 1 0; text-align: center; }
+  .osa-navbar .osa-nav-link { padding: .4rem 0; margin: 0 .1rem; }
+  .osa-navbar .osa-nav-link i { font-size: 1.35rem; }
+  .osa-notif-dropdown { min-width: 0; width: calc(100vw - 1rem); max-width: 380px; }
+
+  /* Admin pages: folded menu button instead of a full-screen list */
+  .admin-sidebar-toggle { display: none; }
+  .admin-sidebar-mobile-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; padding: .65rem .9rem; border: 0; background: #fff; border-radius: .5rem;
+    font-weight: 600; color: #212529; box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+  }
+  .admin-sidebar .admin-nav-list { display: none; margin-top: .4rem; background: #fff; border-radius: .5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, .08); }
+  .admin-sidebar.mobile-open .admin-nav-list { display: block; }
+  .admin-sidebar.mobile-open .admin-sidebar-mobile-toggle .bi-chevron-down { transform: rotate(180deg); }
+  .admin-sidebar { background: transparent !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; }
+
+  /* Wide tables can still scroll sideways, but forms and cards use the full width */
+  .container, .container-fluid { padding-left: .75rem; padding-right: .75rem; }
+}
+
+/* ---------- Home tiles: dashed frame, lifted icon and a travelling light beam on hover ---------- */
+@property --osa-beam-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes osa-beam-spin { to { --osa-beam-angle: 360deg; } }
+
+.osa-home-tile .card {
+  position: relative;
+  border: 1px dashed rgba(33, 37, 41, .22);
+  border-radius: 1.125rem;
+  box-shadow: none;
+  transition: border-color .2s ease-out, background-color .2s ease-out, transform .2s ease-out, box-shadow .2s ease-out;
+}
+.osa-home-tile:hover .card, .osa-home-tile:focus-visible .card {
+  border-color: rgba(33, 37, 41, .4);
+  background-color: #f6f8fb;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .12);
+}
+/* the beam: a bright arc that circles the edge of the tile */
+.osa-home-tile .card::before,
+.osa-home-tile .card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--osa-beam-angle), transparent 0 62%, #22d3ee 74%, #3b82f6 86%, #8b5cf6 94%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: 0;
+  transition: opacity .25s ease-out;
+  pointer-events: none;
+}
+.osa-home-tile .card::before { filter: blur(6px); padding: 4px; }
+.osa-home-tile:hover .card::before, .osa-home-tile:hover .card::after,
+.osa-home-tile:focus-visible .card::before, .osa-home-tile:focus-visible .card::after {
+  opacity: 1;
+  animation: osa-beam-spin 2.4s linear infinite;
+}
+.osa-home-tile-icon {
+  transition: transform .5s cubic-bezier(.22, 1, .36, 1), box-shadow .5s cubic-bezier(.22, 1, .36, 1), background-color .3s ease-out;
+}
+.osa-home-tile:hover .osa-home-tile-icon, .osa-home-tile:focus-visible .osa-home-tile-icon {
+  transform: translateY(-2px) scale(1.16) rotate(-6deg);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .18);
+  background: color-mix(in srgb, var(--tile-color, #0d6efd) 20%, white);
+}
+@media (prefers-reduced-motion: reduce) {
+  .osa-home-tile .card, .osa-home-tile-icon { transition: none; }
+  .osa-home-tile:hover .card::before, .osa-home-tile:hover .card::after { animation: none; }
+}
+
+/* ---------- Toolbar as a floating dock (desktop) ---------- */
+@keyframes osa-dock-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@media (min-width: 768px) {
+  .osa-navbar .navbar-nav {
+    flex-grow: 0 !important;
+    margin-right: auto;
+    overflow: visible !important;          /* let tooltips and counts sit outside the pill */
+    align-items: center;
+    gap: .35rem !important;
+    padding: .15rem .55rem .35rem;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, .07);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .28);
+  }
+  .osa-navbar .osa-nav-link {
+    position: relative;
+    border-radius: 1rem;
+    padding: .4rem .7rem;
+    margin: 0;
+    transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), box-shadow .25s ease-out, background-color .2s ease-out;
+  }
+  .osa-navbar .osa-nav-link:hover,
+  .osa-navbar .osa-nav-link:focus-visible {
+    background: rgba(255, 255, 255, .1);
+    transform: scale(1.2) rotate(-5deg);
+    box-shadow: 0 0 0 1px rgba(110, 168, 254, .55), 0 8px 16px rgba(13, 110, 253, .28);
+    z-index: 2;
+  }
+  /* current page: soft highlight plus a dot under the icon (no frame) */
+  .osa-navbar .osa-nav-link.active {
+    background: rgba(255, 255, 255, .14);
+    border-color: transparent;
+    font-weight: 600;
+  }
+  .osa-navbar .osa-nav-link.active::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -7px;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    border-radius: 50%;
+    background: #6ea8fe;
+    box-shadow: 0 0 8px rgba(110, 168, 254, .9);
+  }
+  /* name label that appears under the icon */
+  .osa-navbar .osa-nav-link::before {
+    content: attr(data-label);
+    position: absolute;
+    top: calc(100% + 14px);
+    left: 50%;
+    transform: translateX(-50%) rotate(5deg) translateY(-4px);
+    padding: .3rem .6rem;
+    border-radius: .45rem;
+    background: #fff;
+    color: #212529;
+    font-size: .75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .25);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease-out, transform .15s ease-out;
+    z-index: 1100;
+  }
+  .osa-navbar .osa-nav-link:hover::before,
+  .osa-navbar .osa-nav-link:focus-visible::before {
+    opacity: 1;
+    transform: translateX(-50%) rotate(5deg) translateY(0);
+  }
+  /* counts stay readable on the scaled icon */
+  .osa-navbar .osa-tab-badge { top: -4px; right: -4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .osa-navbar .navbar-nav { animation: none; }
+  .osa-navbar .osa-nav-link { transition: none; }
+}
+
+/* Keep the whole top bar (and the name label that drops below a tab) above page content */
+.osa-navbar { position: relative; z-index: 1040; }
+
+/* Dashboard sits in the menu's top row, left of the collapse button */
+.admin-sidebar-toggle { justify-content: space-between; gap: .5rem; }
+.admin-sidebar-dashboard {
+  display: flex; align-items: center; gap: .6rem; min-width: 0;
+  padding: .3rem .55rem; border-radius: .45rem;
+  color: #495057; text-decoration: none; font-size: .92rem; font-weight: 500;
+}
+.admin-sidebar-dashboard i { font-size: 1.05rem; width: 1.2rem; text-align: center; flex-shrink: 0; }
+.admin-sidebar-dashboard span { white-space: nowrap; }
+.admin-sidebar-dashboard:hover { background: #f5f6f8; color: #212529; }
+.admin-sidebar-dashboard.active { background: #eaf2ff; color: #0d6efd; font-weight: 600; }
+.admin-sidebar.collapsed .admin-sidebar-toggle { flex-direction: column; align-items: center; justify-content: center; }
+.admin-sidebar.collapsed .admin-sidebar-dashboard span { display: none; }
+.admin-sidebar.collapsed .admin-sidebar-dashboard { padding: .35rem; }
+
+/* ---------- Admin menu: same hover effect as the top toolbar ---------- */
+.admin-sidebar { overflow: visible; z-index: 20; }
+@media (min-width: 768px) {
+  .admin-nav-link, .admin-sidebar-dashboard {
+    position: relative;
+    transform-origin: left center;
+    transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), box-shadow .25s ease-out, background-color .2s ease-out, color .2s ease-out;
+  }
+  .admin-nav-link { margin: 1px .5rem; border-radius: .75rem; border-left-width: 0; }
+  .admin-nav-link.active { border-left-width: 0; box-shadow: inset 3px 0 0 #0d6efd; }
+  .admin-nav-link:hover, .admin-nav-link:focus-visible,
+  .admin-sidebar-dashboard:hover, .admin-sidebar-dashboard:focus-visible {
+    transform: scale(1.1) rotate(-2.5deg);
+    background: #eef4ff;
+    color: #0d6efd;
+    box-shadow: 0 0 0 1px rgba(13, 110, 253, .45), 0 8px 16px rgba(13, 110, 253, .16);
+    z-index: 3;
+  }
+  .admin-nav-link:hover i, .admin-sidebar-dashboard:hover i { transform: scale(1.12); transition: transform .35s cubic-bezier(.34, 1.56, .64, 1); }
+  /* when the menu is closed, the name appears beside the icon */
+  .admin-sidebar.collapsed .admin-nav-link::before,
+  .admin-sidebar.collapsed .admin-sidebar-dashboard::before {
+    content: attr(data-label);
+    position: absolute;
+    left: calc(100% + 14px);
+    top: 50%;
+    transform: translateY(-50%) rotate(2.5deg) translateX(-4px);
+    padding: .3rem .6rem;
+    border-radius: .45rem;
+    background: #212529;
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .25);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease-out, transform .15s ease-out;
+    z-index: 1100;
+  }
+  .admin-sidebar.collapsed .admin-nav-link:hover::before,
+  .admin-sidebar.collapsed .admin-nav-link:focus-visible::before,
+  .admin-sidebar.collapsed .admin-sidebar-dashboard:hover::before,
+  .admin-sidebar.collapsed .admin-sidebar-dashboard:focus-visible::before {
+    opacity: 1;
+    transform: translateY(-50%) rotate(2.5deg) translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-nav-link, .admin-sidebar-dashboard, .admin-nav-link i { transition: none !important; }
+}
+
+/* Menu with no button: the empty space on the bar opens / closes it */
+.admin-sidebar { cursor: pointer; }
+.admin-sidebar .admin-nav-link, .admin-sidebar .admin-sidebar-dashboard, .admin-sidebar button { cursor: pointer; }
+.admin-sidebar-toggle { border-bottom: 0; margin-bottom: .25rem; padding-bottom: .25rem; }
+.admin-sidebar-handle { height: 1.75rem; }
+@media (max-width: 767.98px) { .admin-sidebar-handle { display: none; } }
+
+/* The menu moves up with the page when you scroll, so the whole list can be seen */
+@media (min-width: 768px) {
+  .admin-sidebar { position: relative; top: auto; }
+}
+
+.admin-sidebar-handle-top { height: 1.1rem; }
+
+/* ---------- Admin dashboard tiles: same hover effect as the Home screen tiles ---------- */
+.osa-admin-tile {
+  position: relative;
+  border: 1px dashed rgba(33, 37, 41, .22);
+  border-radius: 1.125rem;
+  box-shadow: none;
+  transition: border-color .2s ease-out, background-color .2s ease-out, transform .2s ease-out, box-shadow .2s ease-out;
+}
+a:hover > .osa-admin-tile, a:focus-visible > .osa-admin-tile {
+  border-color: rgba(33, 37, 41, .4);
+  background-color: #f6f8fb;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .12);
+}
+.osa-admin-tile::before, .osa-admin-tile::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--osa-beam-angle), transparent 0 62%, #22d3ee 74%, #3b82f6 86%, #8b5cf6 94%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: 0;
+  transition: opacity .25s ease-out;
+  pointer-events: none;
+}
+.osa-admin-tile::before { filter: blur(6px); padding: 4px; }
+a:hover > .osa-admin-tile::before, a:hover > .osa-admin-tile::after,
+a:focus-visible > .osa-admin-tile::before, a:focus-visible > .osa-admin-tile::after {
+  opacity: 1;
+  animation: osa-beam-spin 2.4s linear infinite;
+}
+.osa-admin-tile-icon {
+  transition: transform .5s cubic-bezier(.22, 1, .36, 1), filter .5s cubic-bezier(.22, 1, .36, 1);
+}
+a:hover > .osa-admin-tile .osa-admin-tile-icon, a:focus-visible > .osa-admin-tile .osa-admin-tile-icon {
+  transform: translateY(-2px) scale(1.16) rotate(-6deg);
+  filter: drop-shadow(0 6px 8px rgba(13, 110, 253, .35));
+}
+@media (prefers-reduced-motion: reduce) {
+  .osa-admin-tile, .osa-admin-tile-icon { transition: none; }
+  a:hover > .osa-admin-tile::before, a:hover > .osa-admin-tile::after { animation: none; }
+}
+
+/* Home: compact tiles so every tile and the footer fit on one screen */
+.osa-home-grid { max-width: 980px; margin-left: auto; margin-right: auto; }
+.osa-home-grid .osa-home-tile-icon { width: 46px; height: 46px; font-size: 1.3rem; }
+.osa-home-grid .card { padding: .85rem .9rem !important; }
+.osa-home-grid .card .fw-bold { font-size: .98rem; }
+.osa-home-grid .card .small { font-size: .8rem; line-height: 1.3; }
+.osa-home-grid ~ .osa-footer, .osa-footer { padding-top: 1rem; padding-bottom: 1rem; }
+
+/* ---------- Date, notifications and account: same dock style as the tabs ---------- */
+.osa-dock-right { gap: .35rem; }
+@media (min-width: 768px) {
+  .osa-dock-right {
+    padding: .15rem .5rem .15rem;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, .07);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .28);
+  }
+  .osa-dock-right .osa-dock-item {
+    position: relative;
+    border-radius: 1rem;
+    transition: transform .35s cubic-bezier(.34, 1.56, .64, 1), box-shadow .25s ease-out, background-color .2s ease-out;
+  }
+  /* the bell and account buttons lose their white outline and join the pill */
+  .osa-dock-right .btn-outline-light {
+    border-color: transparent;
+    background: transparent;
+    color: #fff;
+    padding: .4rem .65rem;
+  }
+  .osa-dock-right .osa-clock { border-color: transparent; border-radius: 1rem; padding: .4rem .6rem; }
+  .osa-dock-right .osa-dock-item:hover,
+  .osa-dock-right .osa-dock-item:focus-visible,
+  .osa-dock-right .osa-dock-item.show {
+    background: rgba(255, 255, 255, .1);
+    transform: scale(1.12) rotate(-3deg);
+    box-shadow: 0 0 0 1px rgba(110, 168, 254, .55), 0 8px 16px rgba(13, 110, 253, .28);
+    color: #fff;
+    z-index: 2;
+  }
+  .osa-dock-right .osa-clock:hover { background: transparent; border-color: transparent; }
+  /* name label that appears under the item */
+  .osa-dock-right .osa-dock-item::before {
+    content: attr(data-label);
+    position: absolute;
+    top: calc(100% + 14px);
+    left: 50%;
+    transform: translateX(-50%) rotate(3deg) translateY(-4px);
+    padding: .3rem .6rem;
+    border-radius: .45rem;
+    background: #fff;
+    color: #212529;
+    font-size: .75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .25);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease-out, transform .15s ease-out;
+    z-index: 1100;
+  }
+  .osa-dock-right .osa-dock-item:hover::before,
+  .osa-dock-right .osa-dock-item:focus-visible::before {
+    opacity: 1;
+    transform: translateX(-50%) rotate(3deg) translateY(0);
+  }
+  .osa-dock-right .dropdown-toggle.show::before { opacity: 0; } /* no label while its menu is open */
+  .osa-dock-right .osa-notif-badge { top: -3px; right: -3px; }
+}
+@media (max-width: 767.98px) {
+  .osa-navbar .osa-dock-right { order: 2; margin-left: .35rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .osa-dock-right { animation: none; }
+  .osa-dock-right .osa-dock-item { transition: none; }
+}
+
+/* Date / bell / account pill: no motion (keeps the look, highlight and name labels) */
+.osa-dock-right .osa-dock-item,
+.osa-dock-right .osa-dock-item::before { transition: none !important; }
+.osa-dock-right .osa-dock-item:hover,
+.osa-dock-right .osa-dock-item:focus-visible,
+.osa-dock-right .osa-dock-item.show { transform: none !important; }
+.osa-dock-right .osa-dock-item::before,
+.osa-dock-right .osa-dock-item:hover::before,
+.osa-dock-right .osa-dock-item:focus-visible::before { transform: translateX(-50%) !important; }
+
+/* ---------- Drop-down panels and calendar: same glass style as the tabs ---------- */
+.osa-dock-right .dropdown-menu {
+  --bs-dropdown-bg: rgba(22, 27, 33, .94);
+  --bs-dropdown-color: #e5e7eb;
+  --bs-dropdown-border-color: rgba(255, 255, 255, .16);
+  --bs-dropdown-link-color: #e5e7eb;
+  --bs-dropdown-link-hover-color: #fff;
+  --bs-dropdown-link-hover-bg: rgba(255, 255, 255, .1);
+  --bs-dropdown-link-active-bg: rgba(110, 168, 254, .22);
+  --bs-dropdown-divider-bg: rgba(255, 255, 255, .14);
+  --bs-dropdown-border-radius: 1.25rem;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .4);
+  margin-top: .75rem !important;
+  padding: .45rem;
+}
+.osa-dock-right .dropdown-menu .dropdown-item { border-radius: .8rem; padding: .5rem .75rem; }
+.osa-dock-right .dropdown-menu .dropdown-item i { color: #aeb6c1; }
+.osa-dock-right .dropdown-menu .text-muted { color: #aeb6c1 !important; }
+.osa-dock-right .dropdown-menu .text-primary { color: #8bb9ff !important; }
+.osa-dock-right .dropdown-menu .btn-link { color: #8bb9ff; }
+.osa-dock-right .dropdown-menu .btn-outline-secondary { --bs-btn-color: #d1d5db; --bs-btn-border-color: rgba(255,255,255,.3); --bs-btn-hover-bg: rgba(255,255,255,.15); --bs-btn-hover-color: #fff; --bs-btn-hover-border-color: rgba(255,255,255,.4); }
+.osa-dock-right .osa-notif-dropdown { padding: .45rem; }
+.osa-dock-right .osa-notif-dropdown .osa-notif-unread { background: rgba(110, 168, 254, .16); }
+.osa-dock-right .osa-notif-dropdown .border-bottom { border-color: rgba(255, 255, 255, .14) !important; }
+.osa-dock-right .osa-notif-dropdown .dropdown-item .fw-semibold { color: #fff; }
+.osa-dock-right .osa-notif-dropdown .osa-notif-dot { background: #ff6b6b; }
+
+.osa-cal {
+  position: fixed;
+  z-index: 1200;
+  width: 290px;
+  padding: .85rem;
+  color: #e5e7eb;
+  background: rgba(22, 27, 33, .94);
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 1.25rem;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .4);
+  user-select: none;
+}
+.osa-cal[hidden] { display: none; }
+.osa-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
+.osa-cal-title { font-weight: 600; font-size: .95rem; }
+.osa-cal-nav {
+  width: 2rem; height: 2rem; border: 0; border-radius: .7rem;
+  background: rgba(255, 255, 255, .07); color: #e5e7eb;
+}
+.osa-cal-nav:hover { background: rgba(255, 255, 255, .16); }
+.osa-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+.osa-cal-dow span { font-size: .72rem; color: #aeb6c1; padding: .25rem 0; }
+.osa-cal-day { font-size: .85rem; padding: .4rem 0; border-radius: .7rem; }
+.osa-cal-day:hover { background: rgba(255, 255, 255, .1); }
+.osa-cal-out { color: #6b7280; }
+.osa-cal-today { background: #0d6efd; color: #fff; font-weight: 700; box-shadow: 0 0 0 1px rgba(110, 168, 254, .6), 0 4px 10px rgba(13, 110, 253, .35); }
+.osa-cal-today:hover { background: #0b5ed7; }
+.osa-cal-foot { display: flex; justify-content: flex-end; margin-top: .5rem; }
+.osa-cal-today-btn {
+  border: 1px solid rgba(255, 255, 255, .25); background: transparent; color: #8bb9ff;
+  border-radius: .7rem; padding: .25rem .8rem; font-size: .8rem;
+}
+.osa-cal-today-btn:hover { background: rgba(255, 255, 255, .1); }
+.osa-dock-right .osa-dock-item[aria-expanded="true"]::before { opacity: 0 !important; }
+.osa-dock-right .osa-notif-dropdown li { margin-bottom: 2px; }
+
+/* ---------- Staff photos ---------- */
+.osa-avatar { border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid rgba(0, 0, 0, .1); background: #e9ecef; display: inline-block; vertical-align: middle; }
+.osa-avatar-initials { display: inline-flex; align-items: center; justify-content: center; font-weight: 700; color: #495057; background: linear-gradient(135deg, #e7eefc, #dfe7f1); letter-spacing: .02em; }
+.osa-avatar-edit { position: relative; cursor: pointer; display: inline-block; line-height: 0; }
+.osa-avatar-edit-badge {
+  position: absolute; right: -4px; bottom: -4px; width: 18px; height: 18px; border-radius: 50%;
+  background: #0d6efd; color: #fff; font-size: .6rem; display: flex; align-items: center; justify-content: center;
+  border: 2px solid #fff; line-height: 1;
+}
+.osa-avatar-edit:hover .osa-avatar { box-shadow: 0 0 0 2px rgba(13, 110, 253, .5); }
+
+/* ---------- Photo cropper ---------- */
+.osa-crop-stage { position: relative; width: 320px; max-width: 100%; margin: 0 auto; border-radius: .5rem; overflow: hidden; background: #f1f3f5; touch-action: none; }
+.osa-crop-stage canvas { display: block; width: 100%; height: auto; cursor: grab; }
+.osa-crop-stage canvas:active { cursor: grabbing; }
+.osa-crop-ring {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at center, transparent 0, transparent 69%, rgba(0, 0, 0, .45) 70%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15);
+}
+
+/* ---------- Notifications page: one-line filters, selection toolbar ---------- */
+.osa-notif-pills { flex-wrap: nowrap; gap: .15rem; overflow-x: auto; scrollbar-width: none; }
+.osa-notif-pills::-webkit-scrollbar { display: none; }
+.osa-notif-pills .nav-link { white-space: nowrap; padding-left: .6rem; padding-right: .6rem; font-size: .9rem; }
+.osa-notif-toolbar {
+  display: flex; align-items: center; gap: .75rem; padding: .5rem .75rem; margin-bottom: .5rem;
+  background: #fff; border: 1px solid #e5e7eb; border-radius: .6rem; position: sticky; top: .5rem; z-index: 5;
+}
+.notif-card .notif-check { flex-shrink: 0; cursor: pointer; }
+.osa-alert-selected { outline: 2px solid #0d6efd; outline-offset: -1px; background: #f4f8ff; }
+
+/* Hotel logo (uploaded under Admin > License) shown beside the OSA logo in the top bar */
+.osa-site-logo { max-width: 170px; object-fit: contain; }
+
+.osa-lang-menu { min-width: 200px; }
+.osa-dock-right .osa-lang-menu .dropdown-item.active { background: rgba(110, 168, 254, .22); color: #fff; }
+
+.osa-lang-list { margin: .15rem 0 .25rem .5rem; padding-left: .5rem; border-left: 2px solid rgba(255,255,255,.18); }
+.osa-lang-list[hidden] { display: none; }
+
+/* ---------- Try-out top bar colour ---------- */
+.osa-navbar.bg-dark { background-color: var(--osa-nav-bg, #212529) !important; }
+.osa-swatch {
+  width: 24px; height: 24px; border-radius: 50%; padding: 0; flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, .35); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.osa-swatch:hover { border-color: #6ea8fe; }
+.osa-swatch-custom { background: conic-gradient(#f87171, #fbbf24, #34d399, #60a5fa, #a78bfa, #f87171); position: relative; color: #fff; font-size: .7rem; }
+.osa-swatch-custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+/* light top bar: dark text and icons */
+.osa-navbar.osa-nav-light .osa-brand-name,
+.osa-navbar.osa-nav-light .osa-clock,
+.osa-navbar.osa-nav-light .osa-nav-link,
+.osa-navbar.osa-nav-light .osa-nav-link:hover,
+.osa-navbar.osa-nav-light .osa-dock-right .btn-outline-light { color: #1f2937 !important; }
+.osa-navbar.osa-nav-light .navbar-nav,
+.osa-navbar.osa-nav-light .osa-dock-right {
+  background: rgba(255, 255, 255, .7);
+  border-color: rgba(15, 23, 42, .14);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, .1);
+}
+.osa-navbar.osa-nav-light .osa-nav-link.active { background: rgba(13, 110, 253, .12); }
+.osa-navbar.osa-nav-light .osa-nav-link:hover,
+.osa-navbar.osa-nav-light .osa-dock-right .osa-dock-item:hover { background: rgba(15, 23, 42, .06); }
+.osa-navbar.osa-nav-light .osa-tab-badge { border-color: var(--osa-nav-bg, #fff); }
+.osa-navbar.osa-nav-light .osa-logo-img { box-shadow: 0 0 0 1px rgba(15, 23, 42, .15); }
+
+/* round photo button beside the name when adding a staff member */
+.osa-avatar-pick { cursor: pointer; display: inline-block; line-height: 0; position: relative; }
+.osa-avatar-pick-ph { border: 2px dashed #adb5bd; background: #f8f9fa; color: #6c757d; font-size: 1.15rem; }
+.osa-avatar-pick:hover .osa-avatar { box-shadow: 0 0 0 2px rgba(13, 110, 253, .5); border-color: #0d6efd; color: #0d6efd; }
+
+/* Add Staff Member: everything on one line (wraps only on narrow screens) */
+.osa-staff-add-row { display: flex; align-items: center; gap: .5rem; flex-wrap: nowrap; }
+.osa-staff-add-row > div { min-width: 0; }
+.osa-sa-photo { flex: 0 0 auto; }
+.osa-sa-name { flex: 2 1 150px; }
+.osa-sa-dept { flex: 1.6 1 140px; }
+.osa-sa-mobile { flex: 1.3 1 130px; }
+.osa-sa-login { flex: 1.6 1 140px; }
+.osa-sa-add { flex: 0 0 auto; }
+.osa-staff-add-row .form-control, .osa-staff-add-row .form-select { font-size: .9rem; padding-left: .6rem; padding-right: .6rem; }
+.osa-sa-add .btn { white-space: nowrap; }
+@media (max-width: 991.98px) { .osa-staff-add-row { flex-wrap: wrap; } .osa-sa-name, .osa-sa-dept, .osa-sa-mobile, .osa-sa-login { flex: 1 1 45%; } }
+
+/* admin dashboard tiles: the count sits at the right-hand end */
+.osa-admin-tile-num { font-size: 1.25rem; font-weight: 700; line-height: 1; color: #212529; padding-left: .5rem; flex-shrink: 0; }
+
+/* ---------- Glass pop-up (same look as the top bar panels) ---------- */
+.osa-glass-modal {
+  color: #e5e7eb;
+  background: rgba(22, 27, 33, .96);
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 1.25rem;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .5);
+}
+.osa-glass-modal-body { position: relative; padding: 1.75rem 1.5rem 1.4rem; text-align: center; }
+.osa-glass-close {
+  position: absolute; top: .75rem; right: .75rem; width: 2rem; height: 2rem; border: 0; border-radius: .7rem;
+  background: rgba(255, 255, 255, .07); color: #cbd5e1; display: flex; align-items: center; justify-content: center;
+}
+.osa-glass-close:hover { background: rgba(255, 255, 255, .16); color: #fff; }
+.osa-glass-icon {
+  width: 56px; height: 56px; margin: 0 auto .85rem; border-radius: 1rem; font-size: 1.6rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.osa-glass-icon-warning { background: rgba(251, 191, 36, .16); color: #fbbf24; box-shadow: 0 0 0 1px rgba(251, 191, 36, .35); }
+.osa-glass-title { font-weight: 700; color: #fff; margin-bottom: .6rem; }
+.osa-glass-count {
+  display: inline-flex; align-items: baseline; gap: .45rem; padding: .35rem 1rem; margin-bottom: .8rem;
+  border-radius: 999px; background: rgba(251, 191, 36, .12); border: 1px solid rgba(251, 191, 36, .35);
+}
+.osa-glass-count-num { font-size: 1.9rem; font-weight: 800; color: #fbbf24; line-height: 1; }
+.osa-glass-count-unit { font-weight: 600; color: #fde68a; }
+.osa-glass-text { margin-bottom: .5rem; color: #e5e7eb; }
+.osa-glass-muted { color: #aeb6c1; font-size: .92rem; }
+.osa-glass-modal strong { color: #fff; }
+.osa-glass-actions { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; margin-top: 1.15rem; }
+.osa-glass-actions .btn { border-radius: .8rem; padding: .5rem 1.1rem; }
+.modal-backdrop.show { opacity: .55; }
+
+/* The licence pop-up follows the top bar colour the person chose */
+.osa-glass-modal { background: var(--osa-nav-bg, rgba(22, 27, 33, .96)); }
+.osa-nav-is-light .osa-glass-modal { color: #1f2937; border-color: rgba(15, 23, 42, .16); box-shadow: 0 18px 44px rgba(15, 23, 42, .22); }
+.osa-nav-is-light .osa-glass-title, .osa-nav-is-light .osa-glass-modal strong { color: #0f172a; }
+.osa-nav-is-light .osa-glass-text { color: #1f2937; }
+.osa-nav-is-light .osa-glass-muted { color: #4b5563; }
+.osa-nav-is-light .osa-glass-close { background: rgba(15, 23, 42, .06); color: #374151; }
+.osa-nav-is-light .osa-glass-close:hover { background: rgba(15, 23, 42, .14); color: #111827; }
+.osa-nav-is-light .osa-glass-count { background: rgba(217, 119, 6, .1); border-color: rgba(217, 119, 6, .45); }
+.osa-nav-is-light .osa-glass-count-num { color: #b45309; }
+.osa-nav-is-light .osa-glass-count-unit { color: #92400e; }
+.osa-nav-is-light .osa-glass-icon-warning { background: rgba(217, 119, 6, .12); color: #d97706; box-shadow: 0 0 0 1px rgba(217, 119, 6, .35); }
+.osa-nav-is-light .osa-glass-actions .btn-outline-light { color: #1f2937; border-color: rgba(15, 23, 42, .35); }
+.osa-nav-is-light .osa-glass-actions .btn-outline-light:hover { background: rgba(15, 23, 42, .08); color: #111827; }
+
+/* ---------- Menus, notification list and calendar follow the chosen top bar colour ---------- */
+.osa-dock-right .dropdown-menu { --bs-dropdown-bg: var(--osa-nav-bg, rgba(22, 27, 33, .94)); }
+.osa-cal { background: var(--osa-nav-bg, rgba(22, 27, 33, .94)); }
+
+.osa-nav-is-light .osa-dock-right .dropdown-menu {
+  --bs-dropdown-color: #1f2937;
+  --bs-dropdown-link-color: #1f2937;
+  --bs-dropdown-link-hover-color: #0f172a;
+  --bs-dropdown-link-hover-bg: rgba(15, 23, 42, .07);
+  --bs-dropdown-link-active-color: #0f172a;
+  --bs-dropdown-link-active-bg: rgba(13, 110, 253, .14);
+  --bs-dropdown-border-color: rgba(15, 23, 42, .14);
+  --bs-dropdown-divider-bg: rgba(15, 23, 42, .12);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .18);
+}
+.osa-nav-is-light .osa-dock-right .dropdown-menu .dropdown-item i { color: #6b7280; }
+.osa-nav-is-light .osa-dock-right .dropdown-menu .text-muted { color: #4b5563 !important; }
+.osa-nav-is-light .osa-dock-right .dropdown-menu .text-primary,
+.osa-nav-is-light .osa-dock-right .dropdown-menu .btn-link { color: #0d6efd !important; }
+.osa-nav-is-light .osa-dock-right .osa-notif-dropdown .osa-notif-unread { background: rgba(13, 110, 253, .09); }
+.osa-nav-is-light .osa-dock-right .osa-notif-dropdown .border-bottom { border-color: rgba(15, 23, 42, .12) !important; }
+.osa-nav-is-light .osa-dock-right .osa-notif-dropdown .dropdown-item .fw-semibold { color: #0f172a; }
+.osa-nav-is-light .osa-dock-right .osa-notif-dropdown .osa-notif-dot { background: #dc2626; }
+.osa-nav-is-light .osa-dock-right .dropdown-menu .btn-outline-secondary { --bs-btn-color: #374151; --bs-btn-border-color: rgba(15, 23, 42, .3); --bs-btn-hover-bg: rgba(15, 23, 42, .08); --bs-btn-hover-color: #111827; }
+.osa-nav-is-light .osa-lang-list { border-left-color: rgba(15, 23, 42, .2); }
+.osa-nav-is-light .osa-swatch { border-color: rgba(15, 23, 42, .3); }
+
+.osa-nav-is-light .osa-cal { color: #1f2937; border-color: rgba(15, 23, 42, .14); box-shadow: 0 14px 34px rgba(15, 23, 42, .18); }
+.osa-nav-is-light .osa-cal-nav { background: rgba(15, 23, 42, .06); color: #1f2937; }
+.osa-nav-is-light .osa-cal-nav:hover { background: rgba(15, 23, 42, .14); }
+.osa-nav-is-light .osa-cal-dow span { color: #6b7280; }
+.osa-nav-is-light .osa-cal-day:hover { background: rgba(15, 23, 42, .08); }
+.osa-nav-is-light .osa-cal-out { color: #9ca3af; }
+.osa-nav-is-light .osa-cal-today-btn { border-color: rgba(15, 23, 42, .25); color: #0d6efd; }
+.osa-nav-is-light .osa-cal-today-btn:hover { background: rgba(15, 23, 42, .06); }
+
+/* SLA warning sits at the right end of the Active / Completed tab row */
+.osa-sla-alert {
+  display: inline-flex; align-items: center; gap: .5rem;
+  padding: .3rem .75rem; border-radius: 999px; font-size: .85rem;
+  background: #f8d7da; color: #58151c; border: 1px solid #f1aeb5;
+}
+
+/* Tickets table: every column heading on one line */
+.osa-ticket-table thead th { white-space: nowrap; font-size: .82rem; padding: .55rem .5rem; }
+.osa-ticket-table tbody td { padding: .5rem .5rem; }
+.osa-signin-notice {
+  display: flex; align-items: center; gap: .5rem; font-size: .85rem; color: #92400e;
+  background: #fef3c7; border: 1px solid #fcd34d; border-radius: .6rem; padding: .5rem .75rem; margin-bottom: .75rem;
+}

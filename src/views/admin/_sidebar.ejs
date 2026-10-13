@@ -1,0 +1,51 @@
+<%
+  const isAdmin = currentUser.role === 'admin';
+  const adminNavItems = [
+    { href: '/admin', icon: 'bi-speedometer2', label: 'Dashboard', exact: true, show: canSeeAdmin },
+    { href: '/admin/users', icon: 'bi-people', label: 'Users', show: perms.can_manage_users },
+    { href: '/admin/groups', icon: 'bi-shield-lock', label: 'Permission Groups', show: isAdmin },
+    { href: '/admin/departments', icon: 'bi-diagram-3', label: 'Departments', show: perms.can_manage_settings },
+    { href: '/admin/staff', icon: 'bi-person-badge', label: 'Staff', show: perms.can_manage_settings },
+    { href: '/admin/request-types', icon: 'bi-list-check', label: 'Request Types', show: perms.can_manage_settings },
+    { href: '/admin/rooms', icon: 'bi-door-open', label: 'Rooms', show: perms.can_manage_settings },
+    { href: '/admin/room-types', icon: 'bi-building', label: 'Room Types', show: perms.can_manage_settings },
+    { href: '/admin/priority-sla', icon: 'bi-stopwatch', label: 'Priority SLA', show: perms.can_manage_settings },
+    { href: '/admin/access-systems', icon: 'bi-key', label: 'Access Systems List', show: perms.can_manage_access_systems },
+    { href: '/admin/reports', icon: 'bi-bar-chart-line', label: 'Reports', show: perms.can_view_reports },
+    { href: '/admin/deleted-items', icon: 'bi-trash3', label: 'Deleted Items', show: perms.can_view_all_department_reports },
+    { href: '/admin/license', icon: 'bi-shield-check', label: 'License', show: isAdmin },
+  ].filter(item => item.show);
+  const dashboardItem = adminNavItems.find(i => i.exact);
+  const listItems = adminNavItems.filter(i => !i.exact);
+  const currentItem = adminNavItems.find(i => i.exact ? path === i.href : path.startsWith(i.href));
+%>
+<aside class="admin-sidebar collapsed" id="adminSidebar">
+  <div class="admin-sidebar-handle admin-sidebar-handle-top" title="Click here to open or close the menu"></div>
+  <div class="admin-sidebar-toggle">
+    <% if (dashboardItem) { %>
+      <a href="<%= dashboardItem.href %>" class="admin-sidebar-dashboard <%= path === dashboardItem.href ? 'active' : '' %>" data-label="<%= dashboardItem.label %>">
+        <i class="bi <%= dashboardItem.icon %>"></i><span><%= dashboardItem.label %></span>
+      </a>
+    <% } %>
+  </div>
+  <%# Phones: the menu folds into one button showing where you are %>
+  <button type="button" class="admin-sidebar-mobile-toggle" id="adminSidebarMobileToggle" aria-expanded="false">
+    <span><i class="bi <%= currentItem ? currentItem.icon : 'bi-list' %>"></i> <%= currentItem ? currentItem.label : 'Admin menu' %></span>
+    <i class="bi bi-chevron-down"></i>
+  </button>
+  <nav class="admin-nav-list">
+    <% adminNavItems.forEach(item => {
+         const isActive = item.exact ? path === item.href : path.startsWith(item.href);
+    %>
+      <a href="<%= item.href %>" class="admin-nav-link <%= isActive ? 'active' : '' %> <%= item.exact ? 'd-md-none' : '' %>" data-label="<%= item.label %>">
+        <i class="bi <%= item.icon %>"></i><span><%= item.label %></span>
+      </a>
+    <% }) %>
+  </nav>
+  <%# empty strip at the bottom: a roomy place to click to open / close the menu %>
+  <div class="admin-sidebar-handle" title="Click here to open or close the menu"></div>
+</aside>
+<script>
+  // Remembered choice: stays open (or closed) on every page until it is clicked again.
+  try { if (localStorage.getItem('osaAdminMenuOpen') === '1') document.getElementById('adminSidebar').classList.remove('collapsed'); } catch (e) {}
+</script>

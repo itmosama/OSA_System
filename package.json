@@ -1,0 +1,33 @@
+{
+  "name": "it-ticketing-system",
+  "version": "1.0.0",
+  "description": "Simple IT ticketing system for hotel operations",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch-path=src src/app.js",
+    "test": "node --test test/*.test.js",
+    "seed": "node src/db/seed.js",
+    "license-tool": "node vendor-tool/app.js",
+    "build-exe": "pkg src/app.js --config pkg.json --targets node24-win-x64 --output dist/OSA.exe",
+    "build-license-exe": "pkg vendor-tool/app.js --config vendor-tool/pkg.json --targets node24-win-x64 --output dist/license-tool.exe"
+  },
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "method-override": "^3.0.0",
+    "multer": "^2.0.0",
+    "nodemailer": "^10.0.12",
+    "pdfkit": "^0.20.2"
+  },
+  "devDependencies": {
+    "@yao-pkg/pkg": "^6.23.0"
+  }
+}

@@ -1,0 +1,134 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<%
+  const variantIcon = { success: 'bi-check-circle-fill', info: 'bi-info-circle-fill', warning: 'bi-exclamation-triangle-fill', error: 'bi-exclamation-circle-fill' };
+  const isArchivedView = only === 'archived';
+  const visibleGroups = groups.filter(g => !only || g.key === only);
+%>
+<div class="container" style="max-width: 980px;">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h4 class="mb-0"><i class="bi bi-bell"></i> Notifications</h4>
+    <% if (groups.some(g => g.markable && g.unread)) { %>
+      <form method="POST" action="/notifications/read" class="m-0">
+        <button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-check2-all"></i> Mark all as read</button>
+      </form>
+    <% } %>
+  </div>
+
+  <%# every filter on one line %>
+  <ul class="nav nav-pills mb-3 osa-notif-pills">
+    <li class="nav-item"><a class="nav-link py-1 <%= only === '' ? 'active' : '' %>" href="/notifications">All <span class="badge text-bg-light"><%= totalUnread %></span></a></li>
+    <% groups.forEach(g => { %>
+      <li class="nav-item">
+        <a class="nav-link py-1 <%= only === g.key ? 'active' : '' %>" href="/notifications?group=<%= g.key %>"><i class="bi <%= g.icon %>"></i> <%= g.title %>
+          <% if (g.unread) { %><span class="badge text-bg-danger"><%= g.unread %></span><% } %></a>
+      </li>
+    <% }) %>
+    <li class="nav-item ms-auto">
+      <a class="nav-link py-1 <%= isArchivedView ? 'active' : '' %>" href="/notifications?group=archived"><i class="bi bi-archive"></i> Archived
+        <span class="badge text-bg-secondary"><%= archivedItems.length %></span></a>
+    </li>
+  </ul>
+
+  <%# selection toolbar %>
+  <form method="POST" action="/notifications/state" id="notifForm">
+    <div class="osa-notif-toolbar" id="notifToolbar">
+      <label class="form-check mb-0 small">
+        <input type="checkbox" class="form-check-input" id="notifSelectAll"> <span id="notifSelectedText">Select all</span>
+      </label>
+      <div class="ms-auto d-flex gap-2">
+        <% if (isArchivedView) { %>
+          <button type="submit" name="action" value="restore" class="btn btn-sm btn-outline-primary notif-bulk" disabled><i class="bi bi-arrow-counterclockwise"></i> Restore</button>
+        <% } else { %>
+          <button type="submit" name="action" value="archive" class="btn btn-sm btn-outline-secondary notif-bulk" disabled><i class="bi bi-archive"></i> Archive</button>
+        <% } %>
+        <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger notif-bulk" disabled id="notifDelete"><i class="bi bi-trash"></i> Delete</button>
+      </div>
+    </div>
+
+    <% if (isArchivedView) { %>
+      <section class="notif-group">
+        <div class="osa-alert-group-title"><i class="bi bi-archive"></i> Archived <span class="text-muted fw-normal">(<%= archivedItems.length %>)</span></div>
+        <div class="osa-alert-stack">
+          <% archivedItems.forEach(n => { %>
+            <div class="osa-alert osa-alert-<%= n.variant %> notif-card" role="status">
+              <input type="checkbox" class="form-check-input notif-check mt-1" name="keys" value="<%= n.key %>" aria-label="Select">
+              <i class="bi <%= variantIcon[n.variant] %> osa-alert-icon" aria-hidden="true"></i>
+              <a class="osa-alert-body" href="<%= n.href %>">
+                <span class="osa-alert-title"><%= n.title %></span>
+                <span class="osa-alert-text"><%= n.text %></span>
+                <span class="osa-alert-meta"><%= n.groupTitle %><%= n.at ? ' · ' + n.at : '' %></span>
+              </a>
+            </div>
+          <% }) %>
+          <% if (archivedItems.length === 0) { %><p class="osa-alert-empty mb-0">Nothing archived. Use Archive to keep notifications you want to look at later.</p><% } %>
+        </div>
+      </section>
+    <% } else { %>
+      <% visibleGroups.forEach(g => { %>
+        <section class="notif-group" data-group="<%= g.key %>">
+          <div class="osa-alert-group-title">
+            <i class="bi <%= g.icon %>"></i> <%= g.title %>
+            <% if (g.unread) { %><span class="badge text-bg-danger ms-1"><%= g.unread %></span><% } %>
+          </div>
+          <div class="osa-alert-stack">
+            <% g.items.forEach(n => { %>
+              <div class="osa-alert osa-alert-<%= n.variant %> notif-card <%= n.unread && g.markable ? 'is-unread' : '' %>" role="status">
+                <input type="checkbox" class="form-check-input notif-check mt-1" name="keys" value="<%= n.key %>" aria-label="Select">
+                <i class="bi <%= variantIcon[n.variant] %> osa-alert-icon" aria-hidden="true"></i>
+                <a class="osa-alert-body" href="<%= n.href %>">
+                  <span class="osa-alert-title"><%= n.title %></span>
+                  <span class="osa-alert-text"><%= n.text %></span>
+                  <% if (n.at) { %><span class="osa-alert-meta"><%= n.at %></span><% } %>
+                </a>
+                <button type="button" class="osa-alert-x notif-archive-one" data-key="<%= n.key %>" aria-label="Archive" title="Archive"><i class="bi bi-archive"></i></button>
+              </div>
+            <% }) %>
+            <% if (g.items.length === 0) { %><p class="osa-alert-empty mb-0"><%= g.empty %></p><% } %>
+          </div>
+        </section>
+      <% }) %>
+    <% } %>
+  </form>
+</div>
+<script>
+  (function () {
+    var form = document.getElementById('notifForm');
+    var all = document.getElementById('notifSelectAll');
+    var text = document.getElementById('notifSelectedText');
+    var buttons = form.querySelectorAll('.notif-bulk');
+    function checks() { return Array.prototype.slice.call(form.querySelectorAll('.notif-check')); }
+    function refresh() {
+      var c = checks(), n = c.filter(function (x) { return x.checked; }).length;
+      text.textContent = n ? n + ' selected' : 'Select all';
+      all.checked = c.length > 0 && n === c.length;
+      all.indeterminate = n > 0 && n < c.length;
+      buttons.forEach(function (b) { b.disabled = n === 0; });
+      form.querySelectorAll('.notif-card').forEach(function (card) {
+        var box = card.querySelector('.notif-check');
+        card.classList.toggle('osa-alert-selected', !!(box && box.checked));
+      });
+    }
+    form.addEventListener('change', function (e) {
+      if (e.target === all) checks().forEach(function (c) { c.checked = all.checked; });
+      refresh();
+    });
+    form.addEventListener('submit', function (e) {
+      var action = e.submitter && e.submitter.value;
+      var n = checks().filter(function (x) { return x.checked; }).length;
+      if (action === 'delete' && !confirm('Delete ' + n + ' notification' + (n === 1 ? '' : 's') + '? This removes them from your list for good.')) e.preventDefault();
+    });
+    // the small archive button on a card archives just that one
+    form.addEventListener('click', function (e) {
+      var b = e.target.closest('.notif-archive-one');
+      if (!b) return;
+      fetch('/notifications/state', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ action: 'archive', keys: [b.getAttribute('data-key')] })
+      }).then(function () { window.location.reload(); });
+    });
+    refresh();
+  })();
+</script>
+<%- include('../partials/foot') %>

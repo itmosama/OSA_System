@@ -1,0 +1,244 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <%
+    const statusMeta = {
+      'Draft': '#6c757d', 'Pending HOD': '#fd7e14', 'Pending Finance': '#6f42c1', 'Pending IT': '#0d6efd',
+      'In Progress': '#0dcaf0', 'Completed': '#198754', 'Returned to HR': '#dc3545', 'Cancelled': '#343a40',
+    };
+    const stepIcons = { HR: 'bi-person-lines-fill', HOD: 'bi-person-check', Finance: 'bi-cash-coin', IT: 'bi-laptop' };
+    const money = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const f = form || {};
+  %>
+
+  <a href="/workflow-requests" class="small text-decoration-none"><i class="bi bi-arrow-left"></i> Back to Workflow Requests</a>
+
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mt-2 mb-3">
+    <div>
+      <div class="text-muted small"><%= request.reference_number %></div>
+      <h4 class="mb-0"><%= request.title %></h4>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <span class="badge fs-6" style="background-color:<%= statusMeta[request.status] || '#6c757d' %>;"><%= request.status %></span>
+      <%- include('../partials/priority-badge', { name: request.priority, suffix: ' priority' }) %>
+      <% if (can.edit) { %><a href="/workflow-requests/<%= request.id %>/edit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i> Edit</a><% } %>
+    </div>
+  </div>
+
+  <% if (error) { %><div class="alert alert-danger py-2"><%= error %></div><% } %>
+
+  <% if (request.status === 'Returned to HR') { %>
+    <div class="alert alert-warning">
+      <strong><i class="bi bi-arrow-return-left"></i> Returned by <%= request.returned_by_step || 'a reviewer' %>:</strong>
+      <%= request.returned_reason || '(no reason given)' %>
+      <% if (can.edit) { %>
+        <div class="mt-2"><a href="/workflow-requests/<%= request.id %>/edit" class="btn btn-sm btn-warning">Fix and resubmit</a></div>
+      <% } %>
+    </div>
+  <% } %>
+
+  <!-- Progress -->
+  <div class="card p-3 mb-3">
+    <div class="wf-tracker">
+      <% tracker.forEach(step => { %>
+        <div class="wf-step wf-<%= step.state %>">
+          <div class="wf-dot">
+            <% if (step.state === 'done') { %><i class="bi bi-check-lg"></i>
+            <% } else if (step.state === 'returned') { %><i class="bi bi-arrow-return-left"></i>
+            <% } else if (step.state === 'skipped') { %><i class="bi bi-dash-lg"></i>
+            <% } else { %><i class="bi <%= stepIcons[step.key] %>"></i><% } %>
+          </div>
+          <div class="wf-label"><%= step.label %></div>
+          <div class="wf-sub">
+            <% if (step.state === 'current') { %>Now<% }
+               else if (step.state === 'done') { %>Done<% }
+               else if (step.state === 'skipped') { %>No cost, skipped<% }
+               else if (step.state === 'returned') { %>Returned<% }
+               else if (step.key === 'Finance') { %>Only if there is a cost<% } %>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card p-4 mb-3">
+        <h6 class="text-muted">Request</h6>
+        <p class="mb-3" style="white-space: pre-wrap;"><%= request.description %></p>
+        <div class="row small">
+          <div class="col-6 mb-2"><span class="text-muted">Department:</span> <%= request.department_name || '—' %></div>
+          <div class="col-6 mb-2"><span class="text-muted">For:</span> <%= request.requested_for || '—' %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Needed by:</span> <%= request.needed_by || '—' %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Raised by:</span> <%= request.created_by_name || '—' %></div>
+          <div class="col-6 mb-2"><span class="text-muted">Created:</span> <%= request.created_at %></div>
+        </div>
+        <% if (attachments.length) { %>
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            <% attachments.forEach(a => { %>
+              <img src="/uploads/<%= a.filename %>" data-full-src="/uploads/<%= a.filename %>" alt="Photo"
+                   class="rounded border photo-thumb" style="width:90px; height:90px; object-fit:cover;">
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+      <% if (request.hod_comments || request.has_cost || ['Pending Finance','Pending IT','In Progress','Completed'].includes(request.status)) { %>
+        <div class="card p-4 mb-3">
+          <h6 class="text-muted">Head of Department input</h6>
+          <div class="small mb-1"><span class="text-muted">Cost:</span>
+            <% if (request.has_cost) { %><strong><%= money(request.cost_amount) %></strong><% if (request.cost_note) { %> — <%= request.cost_note %><% } %>
+            <% } else { %>No cost<% } %>
+          </div>
+          <% if (request.hod_comments) { %><div class="small" style="white-space: pre-wrap;"><span class="text-muted">Comments:</span> <%= request.hod_comments %></div><% } %>
+        </div>
+      <% } %>
+
+      <% if (request.finance_comments || ['Pending IT','In Progress','Completed'].includes(request.status) && request.has_cost) { %>
+        <div class="card p-4 mb-3">
+          <h6 class="text-muted">Finance</h6>
+          <div class="small">Cost approved.<% if (request.finance_comments) { %> <span style="white-space: pre-wrap;"><%= request.finance_comments %></span><% } %></div>
+        </div>
+      <% } %>
+
+      <% if (request.status === 'Completed') { %>
+        <div class="card p-4 mb-3 border-success">
+          <h6 class="text-success"><i class="bi bi-check-circle-fill"></i> Completed by IT</h6>
+          <div class="small" style="white-space: pre-wrap;"><%= request.completion_notes %></div>
+          <div class="small text-muted mt-1"><%= request.assigned_to_name ? request.assigned_to_name + ' · ' : '' %><%= request.completed_at %></div>
+        </div>
+      <% } %>
+
+      <!-- HR: submit a draft -->
+      <% if (can.submit && request.status === 'Draft') { %>
+        <div class="card p-4 mb-3">
+          <p class="text-muted small mb-2">This request is a draft and has not been sent to the Head of Department yet.</p>
+          <form method="POST" action="/workflow-requests/<%= request.id %>/submit">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-send"></i> Submit for Approval</button>
+          </form>
+        </div>
+      <% } %>
+
+      <!-- Head of Department -->
+      <% if (can.hod) { %>
+        <div class="card p-4 mb-3 border-warning">
+          <h6><i class="bi bi-person-check"></i> Your input as Head of Department</h6>
+          <form method="POST" action="/workflow-requests/<%= request.id %>/hod">
+            <div class="mb-2">
+              <label class="form-label small">Comments</label>
+              <textarea name="hod_comments" class="form-control form-control-sm" rows="2" placeholder="Your input on this request"><%= f.hod_comments !== undefined ? f.hod_comments : (request.hod_comments || '') %></textarea>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" name="has_cost" value="1" id="hasCost" <%= (f.has_cost !== undefined ? f.has_cost : request.has_cost) ? 'checked' : '' %>>
+              <label class="form-check-label" for="hasCost">This request has a cost (Finance must approve it)</label>
+            </div>
+            <div class="row g-2 mb-2" id="costFields">
+              <div class="col-md-5">
+                <label class="form-label small">Estimated cost</label>
+                <input type="text" name="cost_amount" class="form-control form-control-sm" inputmode="decimal" placeholder="e.g. 1250.00" value="<%= f.cost_amount !== undefined ? f.cost_amount : (request.cost_amount || '') %>">
+              </div>
+              <div class="col-md-7">
+                <label class="form-label small">What the cost is for</label>
+                <input type="text" name="cost_note" class="form-control form-control-sm" maxlength="500" placeholder="e.g. 1 laptop + 1 year warranty" value="<%= f.cost_note !== undefined ? f.cost_note : (request.cost_note || '') %>">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small">Reason (only needed if you return it to HR)</label>
+              <input type="text" name="return_reason" class="form-control form-control-sm" maxlength="1000" placeholder="What HR needs to fix" value="<%= f.return_reason || '' %>">
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button type="submit" name="decision" value="approve" class="btn btn-success btn-sm"><i class="bi bi-check-lg"></i> Approve and send on</button>
+              <button type="submit" name="decision" value="return" class="btn btn-outline-danger btn-sm"><i class="bi bi-arrow-return-left"></i> Return to HR</button>
+            </div>
+          </form>
+        </div>
+      <% } %>
+
+      <!-- Finance -->
+      <% if (can.finance) { %>
+        <div class="card p-4 mb-3 border-warning">
+          <h6><i class="bi bi-cash-coin"></i> Finance approval</h6>
+          <p class="small mb-2">Estimated cost: <strong><%= money(request.cost_amount) %></strong><%= request.cost_note ? ' — ' + request.cost_note : '' %></p>
+          <form method="POST" action="/workflow-requests/<%= request.id %>/finance">
+            <div class="mb-2">
+              <label class="form-label small">Comments</label>
+              <textarea name="finance_comments" class="form-control form-control-sm" rows="2"><%= f.finance_comments || '' %></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small">Reason (only needed if you return it to HR)</label>
+              <input type="text" name="return_reason" class="form-control form-control-sm" maxlength="1000" value="<%= f.return_reason || '' %>">
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button type="submit" name="decision" value="approve" class="btn btn-success btn-sm"><i class="bi bi-check-lg"></i> Approve cost</button>
+              <button type="submit" name="decision" value="return" class="btn btn-outline-danger btn-sm"><i class="bi bi-arrow-return-left"></i> Return to HR</button>
+            </div>
+          </form>
+        </div>
+      <% } %>
+
+      <!-- IT -->
+      <% if (can.start) { %>
+        <div class="card p-4 mb-3 border-primary">
+          <h6><i class="bi bi-laptop"></i> Ready for IT</h6>
+          <p class="small text-muted mb-2">This request is approved. Start work to take it on.</p>
+          <form method="POST" action="/workflow-requests/<%= request.id %>/start">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-play-fill"></i> Start Work</button>
+          </form>
+        </div>
+      <% } %>
+      <% if (can.complete) { %>
+        <div class="card p-4 mb-3 border-primary">
+          <h6><i class="bi bi-laptop"></i> Finish the work</h6>
+          <form method="POST" action="/workflow-requests/<%= request.id %>/complete">
+            <div class="mb-2">
+              <label class="form-label small">What was done? <span class="text-danger">*</span></label>
+              <textarea name="completion_notes" class="form-control form-control-sm" rows="3" required><%= f.completion_notes || '' %></textarea>
+            </div>
+            <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-check2-all"></i> Mark Completed</button>
+          </form>
+        </div>
+      <% } %>
+
+      <% if (can.cancel) { %>
+        <div class="card p-3 mb-3">
+          <form method="POST" action="/workflow-requests/<%= request.id %>/cancel" class="d-flex gap-2">
+            <input type="text" name="reason" class="form-control form-control-sm" placeholder="Reason for cancelling (optional)">
+            <button type="submit" class="btn btn-outline-danger btn-sm text-nowrap"><i class="bi bi-x-circle"></i> Cancel Request</button>
+          </form>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card p-4">
+        <h6 class="text-muted mb-3">Timeline</h6>
+        <ul class="list-unstyled small mb-3">
+          <% log.forEach(l => { %>
+            <li class="mb-2 pb-2 border-bottom">
+              <div class="<%= l.action === 'Note' ? '' : 'fw-semibold' %>"><%= l.action === 'Note' ? 'Note' : l.action %></div>
+              <% if (l.details) { %><div class="<%= l.action === 'Note' ? '' : 'text-muted' %>" style="white-space: pre-wrap;"><%= l.details %></div><% } %>
+              <div class="text-muted"><%= l.user_name || 'System' %> — <%= l.created_at %></div>
+            </li>
+          <% }) %>
+        </ul>
+        <% if (can.note) { %>
+          <form method="POST" action="/workflow-requests/<%= request.id %>/note" class="d-flex gap-2">
+            <input type="text" name="note" class="form-control form-control-sm" maxlength="1000" placeholder="Add a note...">
+            <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-send"></i></button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/lightbox.js"></script>
+<script>
+  // Cost boxes only matter when "has a cost" is ticked.
+  (function () {
+    var box = document.getElementById('hasCost'), fields = document.getElementById('costFields');
+    if (!box || !fields) return;
+    function sync() { fields.style.display = box.checked ? '' : 'none'; }
+    box.addEventListener('change', sync); sync();
+  })();
+</script>
+<%- include('../partials/foot') %>

@@ -1,0 +1,54 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+<div class="container-fluid">
+  <div class="admin-shell">
+    <%- include('_sidebar') %>
+    <main class="admin-main">
+      <h4 class="mb-4"><i class="bi bi-gear"></i> Admin Dashboard</h4>
+
+      <%
+        const hasAnyAdminSettings = perms.can_manage_settings;
+        const tiles = [
+          { href: '/admin/users', icon: 'bi-people', label: 'Users', value: counts.users, show: perms.can_manage_users },
+          { href: '/admin/groups', icon: 'bi-shield-lock', label: 'Permission Groups', value: counts.groups, show: currentUser.role === 'admin' },
+          { href: '/admin/departments', icon: 'bi-diagram-3', label: 'Departments', value: counts.departments, show: hasAnyAdminSettings },
+          { href: '/admin/staff', icon: 'bi-person-badge', label: 'Staff', value: counts.staff, show: hasAnyAdminSettings },
+          { href: '/admin/request-types', icon: 'bi-list-check', label: 'Request Types', value: counts.requestTypes, show: hasAnyAdminSettings },
+          { href: '/admin/rooms', icon: 'bi-door-open', label: 'Rooms', value: counts.rooms, show: hasAnyAdminSettings },
+          { href: '/admin/room-types', icon: 'bi-building', label: 'Room Types', value: counts.roomTypes, show: hasAnyAdminSettings },
+          { href: '/admin/priority-sla', icon: 'bi-stopwatch', label: 'Priority SLA', text: 'Resolution time targets', show: hasAnyAdminSettings },
+          { href: '/admin/access-systems', icon: 'bi-key', label: 'Access Systems List', value: counts.accessSystems, show: perms.can_manage_access_systems },
+          { href: '/admin/reports', icon: 'bi-bar-chart-line', label: 'Reports', text: 'Ticket analytics & SLA', show: perms.can_view_reports },
+          { href: '/admin/deleted-items', icon: 'bi-trash3', label: 'Deleted Items', value: counts.deleted, show: perms.can_view_all_department_reports },
+          { href: '/admin/license', icon: 'bi-shield-check', label: 'License', text: licenseText, show: currentUser.role === 'admin' },
+          { href: '/tickets', icon: 'bi-ticket-perforated', label: 'Total Tickets', value: counts.tickets, show: true },
+        ].filter(t => t.show);
+      %>
+
+      <div class="row g-2">
+        <% tiles.forEach(t => { %>
+          <div class="col-6 col-md-4 col-lg-3">
+            <a href="<%= t.href %>" class="text-decoration-none">
+              <div class="card p-2 osa-admin-tile">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi <%= t.icon %> text-primary osa-admin-tile-icon"></i>
+                  <div class="text-truncate">
+                    <% if (t.text) { %>
+                      <div class="small text-muted text-truncate"><%= t.label %></div>
+                      <div class="small fw-semibold text-truncate"><%= t.text %></div>
+                    <% } else { %>
+                      <span class="small text-muted"><%= t.label %></span>
+                    <% } %>
+                  </div>
+                  <% if (!t.text) { %><span class="osa-admin-tile-num ms-auto"><%= t.value %></span><% } %>
+                </div>
+              </div>
+            </a>
+          </div>
+        <% }) %>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/admin-sidebar.js"></script>
+<%- include('../partials/foot') %>
